@@ -1,0 +1,8 @@
+@media print {
+  .no-print { display: none !important; } /* Hide Navbars, Buttons, Audio Players */
+  body { background: white; color: black; }
+  .page-break { page-break-after: always; }
+  
+  /* Ensure text is black for saving ink */
+  p, h1, h2, h3, li { color: black !important; }
+}
