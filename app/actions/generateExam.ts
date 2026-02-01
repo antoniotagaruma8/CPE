@@ -32,8 +32,13 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
     `;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const response = result.response;
+    let text = '';
+    try {
+      text = response.text();
+    } catch (e) {
+      return { success: false, error: "Generation blocked by safety settings. Please try a different topic." };
+    }
     return { success: true, content: text };
   } catch (error) {
     console.error("Generation error:", error);

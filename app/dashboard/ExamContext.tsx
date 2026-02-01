@@ -28,7 +28,10 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState('');
 
   const generateExam = async () => {
-    if (!topic) return;
+    if (!topic) {
+      setError('Please enter a topic to generate an exam.');
+      return;
+    }
     setLoading(true);
     setError('');
     setGeneratedExam('');
