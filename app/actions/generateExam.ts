@@ -1,13 +1,13 @@
 /* app/actions/generateExam.ts */
 'use server';
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from 'groq-sdk';
 
 export async function generateExamAction(type: string, topic: string, cefrLevel: string) {
-  const apiKeyEnv = process.env.GEMINI_API_KEY;
+  const apiKeyEnv = process.env.GROQ_API_KEY;
 
   if (!apiKeyEnv) {
-    return { success: false, error: "API Key not configured. Please set GEMINI_API_KEY in your environment variables." };
+    return { success: false, error: "API Key not configured. Please set GROQ_API_KEY in your environment variables." };
   }
 
   const prompt = `
@@ -29,23 +29,30 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
     `;
 
   const apiKeys = apiKeyEnv.split(',').map(key => key.trim());
-  const models = ["gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"];
+  const models = ["llama3-70b-8192", "mixtral-8x7b-32768", "gemma-7b-it"];
   let lastError = null;
 
   for (const modelName of models) {
     for (const apiKey of apiKeys) {
       try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        console.log(`Attempting to generate with model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        const response = result.response;
-        let text = '';
-        try {
-          text = response.text();
-        } catch (e) {
-          throw new Error("Generation blocked by safety settings.");
+        const groq = new Groq({ apiKey });
+        console.log(`Attempting to generate with model: ${modelName} using key ending in ...${apiKey.slice(-4)}`);
+        const chatCompletion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          model: modelName,
+        });
+
+        const text = chatCompletion.choices[0]?.message?.content;
+        if (!text) {
+          const finishReason = chatCompletion.choices[0]?.finish_reason;
+          throw new Error(`No content returned from model. Finish reason: ${finishReason || 'unknown'}`);
         }
+
         return { success: true, content: text };
       } catch (error) {
         console.error(`Model ${modelName} failed with key ending ...${apiKey.slice(-4)}:`, error);
@@ -54,12 +61,14 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
     }
   }
 
-  let finalErrorMessage = "Generation failed after trying all available models.";
+  let finalErrorMessage = "Generation failed after trying all available models and keys.";
   if (lastError instanceof Error) {
     if (lastError.message.includes('429')) {
-      finalErrorMessage = "API quota exceeded. Please check your Google AI plan and billing details, or try again later.";
+      finalErrorMessage = "API quota exceeded. Please check your Groq plan and billing details, or try again later.";
     } else if (lastError.message.includes('404')) {
       finalErrorMessage = "A model was not found. This may be due to API version or regional restrictions.";
+    } else if (lastError.message.includes('401')) {
+      finalErrorMessage = "Authentication failed. Please check your GROQ_API_KEY.";
     } else {
       finalErrorMessage = `Generation failed. Last error: ${lastError.message}`;
     }
