@@ -44,7 +44,11 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setError(result.error || 'An unknown error occurred.');
       }
     } catch (err) {
-      setError('Failed to connect to the server.');
+      if (err instanceof Error) {
+        setError(`Request failed: ${err.message}`);
+      } else {
+        setError('Failed to connect to the server. An unknown error occurred.');
+      }
     } finally {
       setLoading(false);
     }
