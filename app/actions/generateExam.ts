@@ -28,11 +28,12 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
     `;
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const models = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"];
+  const models = ["gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
   let lastError = null;
 
   for (const modelName of models) {
     try {
+      console.log(`Attempting to generate with model: ${modelName}`);
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent(prompt);
       const response = result.response;
