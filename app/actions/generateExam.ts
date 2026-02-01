@@ -11,7 +11,7 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
       Role: Professional Cambridge English Exam Content Creator.
