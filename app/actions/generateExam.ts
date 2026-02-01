@@ -29,7 +29,7 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
     `;
 
   const apiKeys = apiKeyEnv.split(',').map(key => key.trim());
-  const models = ["gemini-2.5-pro", "gemini-2.0-flash"];
+  const models = ["gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"];
   let lastError = null;
 
   for (const modelName of models) {
@@ -54,6 +54,15 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
     }
   }
 
-  const errorMessage = lastError instanceof Error ? lastError.message : "Unknown error";
-  return { success: false, error: `Generation failed on all models. Last error: ${errorMessage}` };
+  let finalErrorMessage = "Generation failed after trying all available models.";
+  if (lastError instanceof Error) {
+    if (lastError.message.includes('429')) {
+      finalErrorMessage = "API quota exceeded. Please check your Google AI plan and billing details, or try again later.";
+    } else if (lastError.message.includes('404')) {
+      finalErrorMessage = "A model was not found. This may be due to API version or regional restrictions.";
+    } else {
+      finalErrorMessage = `Generation failed. Last error: ${lastError.message}`;
+    }
+  }
+  return { success: false, error: finalErrorMessage };
 }
