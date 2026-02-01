@@ -14,10 +14,6 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="mb-8">
-        <p className="text-slate-600">Configure your exam settings in the sidebar to generate materials.</p>
-      </div>
-
       <div className="grid grid-cols-1 gap-8">
         {/* Results Panel - Full Width */}
         <div className="col-span-1">
