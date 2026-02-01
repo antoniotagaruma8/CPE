@@ -14,7 +14,7 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
 
   const prompt = `
     Role: Professional Cambridge English Exam Content Creator.
-    Task: Create a highly authentic ${type} exam task for the ${cefrLevel} level (B2 First, C1 Advanced, or C2 Proficiency).
+    Task: Create a highly authentic ${type} exam task for the ${cefrLevel} level.
     Topic: "${topic}".
     
     Instructions:

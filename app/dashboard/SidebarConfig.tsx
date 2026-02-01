@@ -50,6 +50,9 @@ export default function SidebarConfig() {
             onChange={(e) => setCefrLevel(e.target.value)}
             className="w-full rounded-lg border-slate-300 border p-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50"
           >
+            <option value="A1">A1 Beginner</option>
+            <option value="A2">A2 Elementary</option>
+            <option value="B1">B1 Intermediate</option>
             <option value="B2">B2 Upper Intermediate</option>
             <option value="C1">C1 Advanced</option>
             <option value="C2">C2 Proficiency</option>
