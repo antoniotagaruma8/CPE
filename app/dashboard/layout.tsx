@@ -40,7 +40,7 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 md:px-8">
-          <h2 className="text-xl font-semibold text-slate-800">Dashboard</h2>
+          <h2 className="text-xl font-semibold text-slate-800">Exam Workspace</h2>
           <div className="flex items-center gap-4">
             <button className="p-2 text-slate-400 hover:text-slate-600">
               <span className="sr-only">Notifications</span>
