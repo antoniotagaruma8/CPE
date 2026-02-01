@@ -29,7 +29,7 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
     `;
 
   const apiKeys = apiKeyEnv.split(',').map(key => key.trim());
-  const models = ["llama3-70b-8192", "mixtral-8x7b-32768", "gemma-7b-it"];
+  const models = ["llama3-70b-8192", "mixtral-8x7b-32768", "gemma2-9b-it"];
   let lastError = null;
 
   for (const modelName of models) {
