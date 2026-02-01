@@ -7,6 +7,8 @@ import { generateExamAction } from '../actions/generateExam';
 interface ExamContextType {
   examType: string;
   setExamType: (type: string) => void;
+  cefrLevel: string;
+  setCefrLevel: (level: string) => void;
   topic: string;
   setTopic: (topic: string) => void;
   generatedExam: string;
@@ -19,6 +21,7 @@ const ExamContext = createContext<ExamContextType | undefined>(undefined);
 
 export function ExamProvider({ children }: { children: React.ReactNode }) {
   const [examType, setExamType] = useState('Reading');
+  const [cefrLevel, setCefrLevel] = useState('C1');
   const [topic, setTopic] = useState('');
   const [generatedExam, setGeneratedExam] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,7 +34,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     setGeneratedExam('');
 
     try {
-      const result = await generateExamAction(examType, topic);
+      const result = await generateExamAction(examType, topic, cefrLevel);
       if (result.success && result.content) {
         setGeneratedExam(result.content);
       } else {
@@ -45,7 +48,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ExamContext.Provider value={{ examType, setExamType, topic, setTopic, generatedExam, loading, error, generateExam }}>
+    <ExamContext.Provider value={{ examType, setExamType, cefrLevel, setCefrLevel, topic, setTopic, generatedExam, loading, error, generateExam }}>
       {children}
     </ExamContext.Provider>
   );

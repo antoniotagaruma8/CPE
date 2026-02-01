@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export async function generateExamAction(type: string, topic: string) {
+export async function generateExamAction(type: string, topic: string, cefrLevel: string) {
   if (!process.env.GEMINI_API_KEY) {
     return { success: false, error: "API Key not configured. Please set GEMINI_API_KEY in your environment variables." };
   }
@@ -14,7 +14,7 @@ export async function generateExamAction(type: string, topic: string) {
 
   const prompt = `
     Act as a professional Cambridge English exam content creator. 
-    Create a ${type} exam task for C1 Advanced (CAE) or C2 Proficiency (CPE) level.
+    Create a ${type} exam task for ${cefrLevel} level.
     The topic of the exam material should be: "${topic}".
     
     Strictly follow the official Cambridge Assessment English rules, format, and standards.

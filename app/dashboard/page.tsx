@@ -5,7 +5,7 @@ import React from 'react';
 import { useExam } from './ExamContext';
 
 export default function DashboardPage() {
-  const { generatedExam, loading, error, examType } = useExam();
+  const { generatedExam, loading, error, examType, cefrLevel } = useExam();
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -48,7 +48,7 @@ export default function DashboardPage() {
             {generatedExam && (
               <div>
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
-                  <h2 className="text-2xl font-bold text-slate-900">{examType} Exam</h2>
+                  <h2 className="text-2xl font-bold text-slate-900">{cefrLevel} {examType} Exam</h2>
                   <button 
                     onClick={handleShare}
                     className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"

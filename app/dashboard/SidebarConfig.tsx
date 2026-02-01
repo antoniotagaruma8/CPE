@@ -5,7 +5,7 @@ import React from 'react';
 import { useExam } from './ExamContext';
 
 export default function SidebarConfig() {
-  const { examType, setExamType, topic, setTopic, generateExam, loading } = useExam();
+  const { examType, setExamType, cefrLevel, setCefrLevel, topic, setTopic, generateExam, loading } = useExam();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +29,22 @@ export default function SidebarConfig() {
             <option value="Writing">Writing</option>
             <option value="Listening">Listening</option>
             <option value="Speaking">Speaking</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="cefrLevel" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            CEFR Level
+          </label>
+          <select
+            id="cefrLevel"
+            value={cefrLevel}
+            onChange={(e) => setCefrLevel(e.target.value)}
+            className="w-full rounded-lg border-slate-300 border p-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50"
+          >
+            <option value="B2">B2 First</option>
+            <option value="C1">C1 Advanced</option>
+            <option value="C2">C2 Proficiency</option>
           </select>
         </div>
 
