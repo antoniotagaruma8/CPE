@@ -4,8 +4,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function generateExamAction(type: string, topic: string, cefrLevel: string) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const apiKeyEnv = process.env.GEMINI_API_KEY;
+
+  if (!apiKeyEnv) {
     return { success: false, error: "API Key not configured. Please set GEMINI_API_KEY in your environment variables." };
   }
 
@@ -27,26 +28,29 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
       - Include an "Answer Key" or "Model Answer" section at the very end.
     `;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const apiKeys = apiKeyEnv.split(',').map(key => key.trim());
   const models = ["gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
   let lastError = null;
 
   for (const modelName of models) {
-    try {
-      console.log(`Attempting to generate with model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      let text = '';
+    for (const apiKey of apiKeys) {
       try {
-        text = response.text();
-      } catch (e) {
-        throw new Error("Generation blocked by safety settings.");
+        const genAI = new GoogleGenerativeAI(apiKey);
+        console.log(`Attempting to generate with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        let text = '';
+        try {
+          text = response.text();
+        } catch (e) {
+          throw new Error("Generation blocked by safety settings.");
+        }
+        return { success: true, content: text };
+      } catch (error) {
+        console.error(`Model ${modelName} failed with key ending ...${apiKey.slice(-4)}:`, error);
+        lastError = error;
       }
-      return { success: true, content: text };
-    } catch (error) {
-      console.error(`Model ${modelName} failed:`, error);
-      lastError = error;
     }
   }
 
