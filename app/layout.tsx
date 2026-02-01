@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import React from 'react';
 
 export default function DashboardLayout({
   children,
@@ -6,6 +7,8 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
+    <html lang="en">
+      <body>
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
@@ -78,5 +81,7 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+      </body>
+    </html>
   );
 }

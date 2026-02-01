@@ -69,7 +69,7 @@ export default function LandingPage() {
       <div className="bg-slate-50 py-12 border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-lg text-slate-700 max-w-4xl mx-auto">
-            At Cambridge Exam Simulator, we offer the world's most trusted range of English practice simulations, supporting every learner at every stage of their journey. All our tools reflect real-life exam scenarios and meet a wide variety of learning goals.
+            At Cambridge Exam Simulator, we offer the world&apos;s most trusted range of English practice simulations, supporting every learner at every stage of their journey. All our tools reflect real-life exam scenarios and meet a wide variety of learning goals.
           </p>
         </div>
       </div>
