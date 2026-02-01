@@ -1,0 +1,60 @@
+/* c:\Users\Anton\Desktop\OLD FILES\GOALS\AI\GitHub 2025\CPE\app\dashboard\ExamContext.tsx */
+'use client';
+
+import React, { createContext, useContext, useState } from 'react';
+import { generateExamAction } from '../actions/generateExam';
+
+interface ExamContextType {
+  examType: string;
+  setExamType: (type: string) => void;
+  topic: string;
+  setTopic: (topic: string) => void;
+  generatedExam: string;
+  loading: boolean;
+  error: string;
+  generateExam: () => Promise<void>;
+}
+
+const ExamContext = createContext<ExamContextType | undefined>(undefined);
+
+export function ExamProvider({ children }: { children: React.ReactNode }) {
+  const [examType, setExamType] = useState('Reading');
+  const [topic, setTopic] = useState('');
+  const [generatedExam, setGeneratedExam] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const generateExam = async () => {
+    if (!topic) return;
+    setLoading(true);
+    setError('');
+    setGeneratedExam('');
+
+    try {
+      const result = await generateExamAction(examType, topic);
+      if (result.success && result.content) {
+        setGeneratedExam(result.content);
+      } else {
+        setError(result.error || 'An unknown error occurred.');
+      }
+    } catch (err) {
+      setError('Failed to connect to the server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ExamContext.Provider value={{ examType, setExamType, topic, setTopic, generatedExam, loading, error, generateExam }}>
+      {children}
+    </ExamContext.Provider>
+  );
+}
+
+export function useExam() {
+  const context = useContext(ExamContext);
+  if (context === undefined) {
+    throw new Error('useExam must be used within an ExamProvider');
+  }
+  return context;
+}
