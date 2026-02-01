@@ -1,3 +1,5 @@
+import './globals.css';
+
 export const metadata = {
   title: 'CPE Simulator',
   description: 'Dashboard',
