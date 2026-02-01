@@ -9,11 +9,7 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
     return { success: false, error: "API Key not configured. Please set GEMINI_API_KEY in your environment variables." };
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    const prompt = `
+  const prompt = `
       Role: Professional Cambridge English Exam Content Creator.
       Task: Create a highly authentic ${type} exam task for the ${cefrLevel} level.
       Topic: "${topic}".
@@ -31,18 +27,28 @@ export async function generateExamAction(type: string, topic: string, cefrLevel:
       - Include an "Answer Key" or "Model Answer" section at the very end.
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    let text = '';
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const models = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"];
+  let lastError = null;
+
+  for (const modelName of models) {
     try {
-      text = response.text();
-    } catch (e) {
-      return { success: false, error: "Generation blocked by safety settings. Please try a different topic." };
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      let text = '';
+      try {
+        text = response.text();
+      } catch (e) {
+        throw new Error("Generation blocked by safety settings.");
+      }
+      return { success: true, content: text };
+    } catch (error) {
+      console.error(`Model ${modelName} failed:`, error);
+      lastError = error;
     }
-    return { success: true, content: text };
-  } catch (error) {
-    console.error("Generation error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: `Generation failed: ${errorMessage}` };
   }
+
+  const errorMessage = lastError instanceof Error ? lastError.message : "Unknown error";
+  return { success: false, error: `Generation failed on all models. Last error: ${errorMessage}` };
 }
