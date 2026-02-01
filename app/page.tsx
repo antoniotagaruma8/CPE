@@ -203,7 +203,6 @@ export default function LandingPage() {
             </Link>
             <Link href="#" className="block p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
               <h3 className="font-bold text-slate-900">Release Notes</h3>
-              <p className="text-sm text-slate-600 mt-1">See what's new.</p>
               <p className="text-sm text-slate-600 mt-1">See what&apos;s new.</p>
             </Link>
           </div>
