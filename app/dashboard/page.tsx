@@ -1,3 +1,4 @@
+/* c:\Users\Anton\Desktop\OLD FILES\GOALS\AI\GitHub 2025\CPE\app\dashboard\page.tsx */
 'use client';
 
 import React, { useState } from 'react';
@@ -33,8 +34,6 @@ export default function DashboardPage() {
   };
 
   const handleShare = () => {
-    // In a real app, this would generate a unique URL. 
-    // For now, we'll simulate copying a link.
     navigator.clipboard.writeText(window.location.href);
     alert('Link copied to clipboard! (Simulation)');
   };
@@ -42,7 +41,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Exam Builder</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Cambridge Exam Builder</h1>
         <p className="text-slate-600 mt-2">Generate custom Cambridge-style practice materials using AI.</p>
       </div>
 
