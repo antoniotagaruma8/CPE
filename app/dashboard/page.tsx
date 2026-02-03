@@ -246,11 +246,27 @@ export default function DashboardPage() {
   const activeQuestionData = examQuestions.find(q => q.id === currentQuestion);
   const activePartData = examParts.find(p => p.part === activeQuestionData?.part);
 
+  const getLevelLabel = (level: string) => {
+    switch (level) {
+      case 'A1': return 'A1 Beginner';
+      case 'A2': return 'A2 Elementary';
+      case 'B1': return 'B1 Intermediate';
+      case 'B2': return 'B2 Upper Intermediate';
+      case 'C1': return 'C1 Advanced';
+      case 'C2': return 'C2 Proficiency';
+      default: return level;
+    }
+  };
+
+  const getExamTypeLabel = (type: string) => {
+    return type === 'Reading' ? 'Reading & Use of English' : type;
+  };
+
   return (
     <div className="flex flex-col h-screen bg-[#e9e9e9] font-sans text-[#333]">
       <header className="h-16 bg-white border-b border-gray-300 flex items-center justify-between px-6 shrink-0 shadow-sm z-10">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-gray-700">C1 Advanced: Reading and Use of English</h1>
+          <h1 className="text-lg font-semibold text-gray-700">{getLevelLabel(cefrLevel)}: {getExamTypeLabel(examType)}</h1>
           <div className="h-6 w-px bg-gray-300"></div>
           <div className="text-sm text-gray-600">Candidate: <span className="font-bold text-black">Guest User</span></div>
         </div>
