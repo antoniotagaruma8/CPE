@@ -39,25 +39,26 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     try {
       let enhancedTopic = '';
       let partCount = 5;
-      const commonInstructions = "Output must be a valid JSON array of objects. Do not wrap the output in markdown code blocks. Ensure strict JSON syntax. Escape all double quotes within strings. For each question, provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques to answer this type of question.";
+      const baseJsonInstructions = "Output must be a valid JSON array of objects. Do not wrap the output in markdown code blocks. Ensure strict JSON syntax. Escape all double quotes within strings.";
+      const mcInstructions = "For each question, provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques to answer this type of question.";
 
       switch (examType) {
         case 'Writing':
           partCount = 2;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct writing tasks (Part 1 Essay, Part 2 Choice). For each part, provide 'title', 'instructions', and 'content'. The 'content' field must be a single string containing the input text or prompt details. Generate 5-7 multiple choice questions that test understanding of the writing task, appropriate vocabulary, or structure. ${commonInstructions}`;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct writing tasks following the Cambridge ${cefrLevel} exam format. Part 1: Compulsory Essay (summarizing and evaluating two input texts). Part 2: Choice of task (e.g., Report, Review, Proposal, Letter). For each part, provide 'title', 'instructions', and 'content'. The 'content' field must be a single string containing the input text or prompt details. Do NOT generate multiple choice questions about the text. Instead, the 'questions' array must contain exactly one object to allow the user to confirm completion. This question object should have: 'text': 'Have you completed this writing task?', 'options': ['Yes, task completed'], 'correctOption': 'A', 'explanation': 'Writing tasks are assessed on Content, Communicative Achievement, Organisation, and Language.'. ${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that specific writing task type.`;
           break;
         case 'Listening':
           partCount = 4;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct listening parts. Provide the transcript in the 'content' field. Generate 5-7 multiple choice questions per part based on the transcript. ${commonInstructions}`;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct listening parts following the Cambridge ${cefrLevel} exam format. Part 1: Three short unrelated extracts (Multiple Choice). Part 2: Monologue (Sentence completion - adapt to Multiple Choice). Part 3: Interview/Discussion (Multiple Choice). Part 4: Five short themed monologues (Multiple Matching - adapt to Multiple Choice). Provide the transcript in the 'content' field. Generate 5-7 multiple choice questions per part based on the transcript. ${baseJsonInstructions} ${mcInstructions}`;
           break;
         case 'Speaking':
           partCount = 3;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct speaking parts. Provide the interlocutor script in the 'content' field. Generate 5-7 multiple choice questions testing useful phrases or strategies for this part. ${commonInstructions}`;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct speaking parts following the Cambridge ${cefrLevel} exam format. Part 1: Interview. Part 2: Long turn (comparing photographs - describe them in content). Part 3: Collaborative task/Discussion. Provide the interlocutor script in the 'content' field. The 'questions' array should contain the specific prompts/questions the examiner asks. For each question object, set 'options' to ['Next'], 'correctOption' to 'A', and 'explanation' to 'Focus on fluency and coherence.'. ${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that speaking part.`;
           break;
         case 'Reading':
         default:
           partCount = 5;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct exam parts. Each part must have a unique reading text (1 paragraph, approx 200 words) and 5-7 questions. ${commonInstructions}`;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct reading parts following the Cambridge ${cefrLevel} exam format (focusing on parts compatible with multiple choice). Part 1: Multiple-choice cloze. Part 5: Multiple choice (long text). Part 6: Cross-text multiple matching. Part 7: Gapped text (paragraph fitting - adapt to Multiple Choice). Part 8: Multiple matching. Each part must have a unique reading text (approx 200 words). Generate 5-7 questions per part. ${baseJsonInstructions} ${mcInstructions}`;
           break;
       }
 
