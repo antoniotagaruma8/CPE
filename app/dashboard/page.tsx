@@ -63,17 +63,35 @@ export default function DashboardPage() {
         } else if (rawData.title && rawData.content && rawData.questions) {
           data = [rawData];
         } else {
-          data = rawData;
+          // Check if the object is a map of parts (e.g. { part1: {...}, part2: {...} })
+          const values = rawData && typeof rawData === 'object' ? Object.values(rawData) : [];
+          const looksLikeParts = values.length > 0 && values.every((v: any) => v && typeof v === 'object' && (v.title || v.questions));
+          data = looksLikeParts ? values : rawData;
         }
 
-        // Handle the new array of exam parts structure
-        if (Array.isArray(data) && data.length > 0 && data.every(part => part.title && part.content && part.questions)) {
-          const allParts: ExamPart[] = [];
-          const allQuestions: Question[] = [];
-          let questionIdCounter = 1;
+        // Normalize data to always be an array
+        const partsArray = Array.isArray(data) ? data : [data];
+        
+        const allParts: ExamPart[] = [];
+        const allQuestions: Question[] = [];
+        let questionIdCounter = 1;
+        let validPartsFound = false;
 
-          data.forEach((partData: any, partIndex: number) => {
-            const partNumber = partIndex + 1;
+        partsArray.forEach((item: any, index: number) => {
+          // Attempt to unwrap if the object has a single key that looks like a part identifier
+          let partData = item;
+          if (partData && !partData.title && !partData.questions && Object.keys(partData).length === 1) {
+            const key = Object.keys(partData)[0];
+            if (partData[key] && typeof partData[key] === 'object') {
+              partData = partData[key];
+            }
+          }
+
+          // Validate essential fields
+          if (partData && partData.title && (partData.content || partData.text) && Array.isArray(partData.questions)) {
+            validPartsFound = true;
+            const partNumber = index + 1;
+            
             allParts.push({
               part: partNumber,
               title: partData.title,
@@ -81,21 +99,21 @@ export default function DashboardPage() {
               examinerNotes: partData.examinerNotes || ''
             });
 
-            if (Array.isArray(partData.questions)) {
-              partData.questions.forEach((q: any) => {
-                allQuestions.push({
-                  id: questionIdCounter++,
-                  part: partNumber,
-                  topic: partData.title,
-                  question: q.text,
-                  options: q.options.map((opt: any) => opt.text),
-                  correctOption: q.correctOption,
-                  explanation: q.explanation,
-                });
+            partData.questions.forEach((q: any) => {
+              allQuestions.push({
+                id: questionIdCounter++,
+                part: partNumber,
+                topic: partData.title,
+                question: q.text,
+                options: Array.isArray(q.options) ? q.options.map((opt: any) => typeof opt === 'object' && opt.text ? opt.text : opt) : [],
+                correctOption: q.correctOption,
+                explanation: q.explanation,
               });
-            }
-          });
+            });
+          }
+        });
 
+        if (validPartsFound) {
           setExamParts(allParts);
           setExamQuestions(allQuestions);
           setLocalError('');
