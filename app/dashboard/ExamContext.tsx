@@ -39,12 +39,12 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     try {
       let enhancedTopic = '';
       let partCount = 5;
-      const commonInstructions = "Output must be a JSON array of objects. For each question, provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques to answer this type of question.";
+      const commonInstructions = "Output must be a valid JSON array of objects. Do not wrap the output in markdown code blocks. Ensure strict JSON syntax. Escape all double quotes within strings. For each question, provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques to answer this type of question.";
 
       switch (examType) {
         case 'Writing':
           partCount = 2;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct writing tasks (Part 1 Essay, Part 2 Choice). For each part, provide the task instructions and input text in the 'content' field. Generate 5-7 multiple choice questions that test understanding of the writing task, appropriate vocabulary, or structure. ${commonInstructions}`;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct writing tasks (Part 1 Essay, Part 2 Choice). For each part, provide 'title', 'instructions', and 'content'. The 'content' field must be a single string containing the input text or prompt details. Generate 5-7 multiple choice questions that test understanding of the writing task, appropriate vocabulary, or structure. ${commonInstructions}`;
           break;
         case 'Listening':
           partCount = 4;
