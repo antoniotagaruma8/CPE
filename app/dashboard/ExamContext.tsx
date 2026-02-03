@@ -37,7 +37,11 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     setGeneratedExam('');
 
     try {
-      const result = await generateExamAction(examType, topic, cefrLevel);
+      // Requesting 5 parts, 200 words each.
+      // Adding instructions for 1 paragraph and 5-7 questions per part via the topic string.
+      const enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly 5 distinct exam parts. Each part must have a unique reading text (1 paragraph, approx 200 words) and 5-7 questions. Output must be a JSON array of 5 objects. For each question, provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques to answer this type of question.`;
+      console.log("Generating exam with enhanced topic:", enhancedTopic);
+      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 200, 5);
       if (result.success && result.content) {
         setGeneratedExam(result.content);
       } else {
