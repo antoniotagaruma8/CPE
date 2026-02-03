@@ -37,11 +37,32 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     setGeneratedExam('');
 
     try {
-      // Requesting 5 parts, 200 words each.
-      // Adding instructions for 1 paragraph and 5-7 questions per part via the topic string.
-      const enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly 5 distinct exam parts. Each part must have a unique reading text (1 paragraph, approx 200 words) and 5-7 questions. Output must be a JSON array of 5 objects. For each question, provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques to answer this type of question.`;
+      let enhancedTopic = '';
+      let partCount = 5;
+      const commonInstructions = "Output must be a JSON array of objects. For each question, provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques to answer this type of question.";
+
+      switch (examType) {
+        case 'Writing':
+          partCount = 2;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct writing tasks (Part 1 Essay, Part 2 Choice). For each part, provide the task instructions and input text in the 'content' field. Generate 5-7 multiple choice questions that test understanding of the writing task, appropriate vocabulary, or structure. ${commonInstructions}`;
+          break;
+        case 'Listening':
+          partCount = 4;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct listening parts. Provide the transcript in the 'content' field. Generate 5-7 multiple choice questions per part based on the transcript. ${commonInstructions}`;
+          break;
+        case 'Speaking':
+          partCount = 3;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct speaking parts. Provide the interlocutor script in the 'content' field. Generate 5-7 multiple choice questions testing useful phrases or strategies for this part. ${commonInstructions}`;
+          break;
+        case 'Reading':
+        default:
+          partCount = 5;
+          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct exam parts. Each part must have a unique reading text (1 paragraph, approx 200 words) and 5-7 questions. ${commonInstructions}`;
+          break;
+      }
+
       console.log("Generating exam with enhanced topic:", enhancedTopic);
-      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 200, 5);
+      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 200, partCount);
       if (result.success && result.content) {
         setGeneratedExam(result.content);
       } else {
