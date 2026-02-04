@@ -48,6 +48,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (generatedExam) {
+      // Reset all exam-specific state when a new exam is generated
+      setCurrentQuestion(1);
+      setAnswers({});
+      setFlagged(new Set());
+      setSubmittedQuestions(new Set());
+      setLocalError('');
+      // Optional: Reset timer as well
+      // setTimeLeft(90 * 60);
+
       try {
         const rawData = JSON.parse(generatedExam);
         let data: any;
@@ -132,14 +141,22 @@ export default function DashboardPage() {
         if (validPartsFound) {
           setExamParts(allParts);
           setExamQuestions(allQuestions);
-          setLocalError('');
         } else {
+          setExamParts([]);
+          setExamQuestions([]);
           setLocalError("Generated exam data is not in the expected format. It should be an array of exam parts, or a single valid exam object.");
         }
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : String(e);
+        setExamParts([]);
+        setExamQuestions([]);
         setLocalError(`Failed to parse the generated exam: ${errorMessage}. Displaying raw content instead.`);
       }
+    } else {
+      // When generatedExam is cleared (e.g., on new generation), clear parsed data
+      setExamParts([]);
+      setExamQuestions([]);
+      setLocalError('');
     }
   }, [generatedExam]);
 
