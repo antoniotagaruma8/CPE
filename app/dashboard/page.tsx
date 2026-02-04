@@ -129,8 +129,14 @@ export default function DashboardPage() {
                 id: questionIdCounter++,
                 part: partNumber,
                 topic: partData.title,
-                question: q.text,
-                options: Array.isArray(q.options) ? q.options.map((opt: any) => typeof opt === 'object' && opt.text ? opt.text : opt) : [],
+                question: q.text || q.question || q.prompt || '',
+                options: Array.isArray(q.options)
+                  ? q.options.map((opt: any) => {
+                      if (typeof opt === 'string') return opt;
+                      if (typeof opt === 'object' && opt !== null) return opt.text || opt.value;
+                      return null;
+                    }).filter((o): o is string => o !== null)
+                  : [],
                 correctOption: q.correctOption,
                 explanation: q.explanation,
               });
