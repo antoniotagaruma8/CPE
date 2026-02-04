@@ -58,12 +58,12 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         case 'Reading':
         default:
           partCount = 5;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct reading parts following the Cambridge ${cefrLevel} exam format (focusing on parts compatible with multiple choice). Part 1: Multiple-choice cloze. Part 5: Multiple choice. Part 6: Cross-text multiple matching. Part 7: Gapped text (paragraph fitting - adapt to Multiple Choice). Part 8: Multiple matching. Each part MUST have a unique reading text. Reading texts must be approximately 300 words. Generate exactly 5 questions per part (Total 25 questions). ${baseJsonInstructions} ${mcInstructions}`;
+          enhancedTopic = `${topic}. CRITICAL: Generate a JSON array of EXACTLY 5 exam parts. Part 1 (Cloze), Part 5 (Long Text), Part 6 (Cross-text), Part 7 (Gapped), Part 8 (Matching). Each part MUST have a unique reading text (approx 250 words) and EXACTLY 5 questions. TOTAL QUESTIONS MUST BE 25. Do not stop early. ${baseJsonInstructions} ${mcInstructions}`;
           break;
       }
 
       console.log("Generating exam with enhanced topic:", enhancedTopic);
-      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 300, partCount);
+      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 250, partCount);
       if (result.success && result.content) {
         setGeneratedExam(result.content);
       } else {
