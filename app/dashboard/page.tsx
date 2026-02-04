@@ -50,24 +50,36 @@ export default function DashboardPage() {
     if (generatedExam) {
       try {
         const rawData = JSON.parse(generatedExam);
-        let data;
+        let data: any;
+        let processedData = rawData;
+
+        // Drill down if we have a single-key object wrapper like {"Writing": ...} or similar
+        if (processedData && typeof processedData === 'object' && !Array.isArray(processedData) && Object.keys(processedData).length === 1) {
+            const key = Object.keys(processedData)[0];
+            if (typeof processedData[key] === 'object') {
+              processedData = processedData[key];
+            }
+        }
 
         // Handle potential wrapper objects or direct arrays
-        if (Array.isArray(rawData)) {
-          data = rawData;
-        } else if (rawData.parts && Array.isArray(rawData.parts)) {
-          data = rawData.parts;
-        } else if (rawData.exam && Array.isArray(rawData.exam)) {
-          data = rawData.exam;
-        } else if (rawData.tasks && Array.isArray(rawData.tasks)) {
-          data = rawData.tasks;
-        } else if (rawData.title && rawData.content && rawData.questions) {
-          data = [rawData];
+        if (Array.isArray(processedData)) {
+          data = processedData;
+        } else if (processedData?.parts && Array.isArray(processedData.parts)) {
+          data = processedData.parts;
+        } else if (processedData?.exam && Array.isArray(processedData.exam)) {
+          data = processedData.exam;
+        } else if (processedData?.tasks && Array.isArray(processedData.tasks)) {
+          data = processedData.tasks;
+        } else if (processedData?.writingTasks && Array.isArray(processedData.writingTasks)) {
+          data = processedData.writingTasks;
+        } else if (processedData?.title && processedData?.content && processedData?.questions) {
+          data = [processedData];
         } else {
           // Check if the object is a map of parts (e.g. { part1: {...}, part2: {...} })
-          const values = rawData && typeof rawData === 'object' ? Object.values(rawData) : [];
-          const looksLikeParts = values.length > 0 && values.every((v: any) => v && typeof v === 'object' && (v.title || v.questions));
-          data = looksLikeParts ? values : rawData;
+          const values = processedData && typeof processedData === 'object' ? Object.values(processedData) : [];
+          const flattenedValues = values.flat(); // Handles cases like { Part1: [{}], Part2: [{}] }
+          const looksLikeParts = flattenedValues.length > 0 && flattenedValues.every((v: any) => v && typeof v === 'object' && (v.title || v.questions));
+          data = looksLikeParts ? flattenedValues : processedData;
         }
 
         // Normalize data to always be an array
@@ -92,10 +104,12 @@ export default function DashboardPage() {
           if (partData && partData.title && (partData.content || partData.text) && Array.isArray(partData.questions)) {
             validPartsFound = true;
             const partNumber = index + 1;
+            // Clean up title to remove duplicated "Part X:" prefix from AI generation
+            const cleanedTitle = (partData.title || '').replace(/^Part\s*\d+\s*:\s*/i, '').trim();
             
             allParts.push({
               part: partNumber,
-              title: partData.title,
+              title: cleanedTitle,
               instructions: partData.instructions || '',
               content: partData.content || partData.text || '',
               examinerNotes: partData.examinerNotes || '',
@@ -313,7 +327,7 @@ export default function DashboardPage() {
             </div>
             {activePartData?.content && (
               <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <h4 className="font-semibold text-slate-600 mb-2 text-sm uppercase tracking-wider">Input Text</h4>
+                <h4 className="font-semibold text-slate-600 mb-2 text-sm uppercase tracking-wider">Context</h4>
                 <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed whitespace-pre-line">
                   {activePartData.content}
                 </div>
