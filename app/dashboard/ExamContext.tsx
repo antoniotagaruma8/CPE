@@ -40,7 +40,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       let enhancedTopic = '';
       let partCount = 5;
       const baseJsonInstructions = "Output must be a valid JSON array of objects. Do not wrap the output in markdown code blocks. Ensure strict JSON syntax. Escape all double quotes within strings. Do not use string concatenation (e.g. '...' + '...') in JSON values. The 'content' field must be a single string.";
-      const mcInstructions = "For EVERY question, including those for 'open cloze', 'gapped text', or 'word formation' parts, you MUST generate a multiple-choice question with 4 distinct options (A, B, C, D). One option must be the correct answer. Provide the correct option letter in the 'correctOption' field (e.g., 'A'). Also provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques for that specific question type.";
+      const mcInstructions = "For EVERY question, including those for 'open cloze', 'gapped text', or 'word formation' parts, you MUST generate a multiple-choice question with 4 distinct options (A, B, C, D). One option must be the correct answer. Provide the correct option letter in the 'correctOption' field (e.g., 'A'). Do NOT include the option letter (e.g. 'A)') in the option text. Also provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques for that specific question type.";
 
       switch (examType) {
         case 'Writing':
@@ -88,19 +88,12 @@ Before finishing, double-check that you have generated exactly ${partCount} part
           break;
         case 'Reading':
         default:
-          partCount = 8; // C1/C2 Reading & Use of English has 8 parts.
-          const readingQuestionCount = 6; // Average questions per part.
-          const readingTotal = 52; // Approximate total for C1.
-          enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Reading & Use of English exam.
-CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects. The total number of questions across all parts should be approximately ${readingTotal}. Do not stop generating early.
           partCount = 4; // Reduced from 8 to generate fewer questions.
           const readingQuestionCount = 6; // Aim for 5-6 questions per part.
           const readingTotal = partCount * readingQuestionCount; // Approx 24, within the 20-25 range.
           enhancedTopic = `Based on the topic "${topic}", generate a Cambridge ${cefrLevel} Reading & Use of English practice exam.
 CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} distinct part objects. The total number of questions across all parts should be approximately ${readingTotal}. Do not stop generating early.
 
-The ${partCount} parts must be varied and follow the Cambridge exam format (e.g., Multiple-choice cloze, Open cloze, Word formation, Key word transformation, Multiple choice, Cross-text multiple matching, Gapped text, Multiple matching).
-For each of the ${partCount} parts, provide: 'title', 'instructions', 'content' (the reading text), and a 'questions' array with an appropriate number of questions for that part type.
 The ${partCount} parts must be varied and follow the Cambridge exam format (e.g., Multiple-choice cloze, Open cloze, Word formation, Multiple choice).
 For each of the ${partCount} parts, provide: 'title', 'instructions', 'content' (the reading text), and a 'questions' array with an appropriate number of questions for that part type (around ${readingQuestionCount} each).
 ${baseJsonInstructions} ${mcInstructions}
