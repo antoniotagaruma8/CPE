@@ -17,7 +17,8 @@ interface Question {
 interface ExamPart {
   part: number;
   title: string;
-  text: string;
+  instructions: string;
+  content: string;
   examinerNotes?: string;
 }
 
@@ -95,8 +96,9 @@ export default function DashboardPage() {
             allParts.push({
               part: partNumber,
               title: partData.title,
-              text: `${partData.instructions || ''}\n\n${partData.content || ''}`,
-              examinerNotes: partData.examinerNotes || ''
+              instructions: partData.instructions || '',
+              content: partData.content || partData.text || '',
+              examinerNotes: partData.examinerNotes || '',
             });
 
             partData.questions.forEach((q: any) => {
@@ -303,14 +305,36 @@ export default function DashboardPage() {
       <main className="flex-1 flex overflow-hidden p-2 sm:p-4 gap-2 sm:gap-4">
         <div className="flex-1 bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-3">Part {activePartData?.part}: {activePartData?.title}</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-3">
+              Part {activePartData?.part}: {activePartData?.title}
+            </h2>
             <div className="prose prose-slate max-w-none text-gray-800 leading-relaxed whitespace-pre-line">
-              {activePartData?.text}
+              {activePartData?.instructions}
             </div>
+            {activePartData?.content && (
+              <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <h4 className="font-semibold text-slate-600 mb-2 text-sm uppercase tracking-wider">Input Text</h4>
+                <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed whitespace-pre-line">
+                  {activePartData.content}
+                </div>
+              </div>
+            )}
+            {examType === 'Writing' && submittedQuestions.has(currentQuestion) && activePartData?.examinerNotes && (
+              <div className="mt-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-r-lg animate-fade-in">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l.707.707M6.343 17.657l-.707-.707m12.728 0l.707-.707M12 21v-1m-4-4H7v4h1v-4zm8 0h1v4h-1v-4z" /></svg>
+                  <div>
+                    <h4 className="font-bold text-green-800">Tip</h4>
+                    <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{activePartData.examinerNotes}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex-1 bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
+        {examType !== 'Writing' && (
+          <div className="flex-1 bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
           <div className="max-w-2xl mx-auto">
             <h3 className="text-lg font-bold mb-4 text-gray-800 bg-gray-100 p-3 rounded border-l-4 border-blue-500">
               Question {currentQuestion}
@@ -387,6 +411,7 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+        )}
       </main>
 
       <footer className="h-20 bg-[#2d2d2d] text-white flex items-center justify-between px-4 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
