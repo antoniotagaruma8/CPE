@@ -12,7 +12,14 @@ if (apiKeys.length === 0) {
   console.error('No Groq API keys found. Please set GROQ_API_KEY_1, GROQ_API_KEY_2, etc. in your .env.local file.');
 }
 
+// 2. Define models to rotate through. These are large, capable models suitable for complex generation.
+const models = [
+  'llama-3.3-70b-versatile',
+  'mixtral-8x7b-32768',
+];
+
 let currentKeyIndex = 0;
+let currentModelIndex = 0;
 
 /**
  * Gets the next available API key in a round-robin fashion.
@@ -25,6 +32,16 @@ function getNextApiKey() {
   const key = apiKeys[currentKeyIndex];
   currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
   return key;
+}
+
+/**
+ * Gets the next available model in a round-robin fashion.
+ * This helps distribute requests across different models to avoid model-specific rate limits.
+ */
+function getNextModel() {
+  const model = models[currentModelIndex];
+  currentModelIndex = (currentModelIndex + 1) % models.length;
+  return model;
 }
 
 export async function generateExamAction(
@@ -40,8 +57,9 @@ export async function generateExamAction(
 
   try {
     const apiKey = getNextApiKey();
+    const model = getNextModel();
     const keyIndex = (currentKeyIndex - 1 + apiKeys.length) % apiKeys.length;
-    console.log(`Using API Key index: ${keyIndex}`);
+    console.log(`Using API Key index: ${keyIndex}, Model: ${model}`);
     
     const groq = new Groq({ apiKey });
 
@@ -50,7 +68,7 @@ export async function generateExamAction(
         { role: 'system', content: 'You are an expert in creating Cambridge English Qualification exams. Your output must be a valid JSON object.' },
         { role: 'user', content: prompt },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: model,
       temperature: 0.7,
       max_tokens: 4096,
       response_format: { type: 'json_object' },
