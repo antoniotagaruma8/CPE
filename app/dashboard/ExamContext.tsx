@@ -93,9 +93,16 @@ Before finishing, double-check that you have generated exactly ${partCount} part
           const readingTotal = 52; // Approximate total for C1.
           enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Reading & Use of English exam.
 CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects. The total number of questions across all parts should be approximately ${readingTotal}. Do not stop generating early.
+          partCount = 4; // Reduced from 8 to generate fewer questions.
+          const readingQuestionCount = 6; // Aim for 5-6 questions per part.
+          const readingTotal = partCount * readingQuestionCount; // Approx 24, within the 20-25 range.
+          enhancedTopic = `Based on the topic "${topic}", generate a Cambridge ${cefrLevel} Reading & Use of English practice exam.
+CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} distinct part objects. The total number of questions across all parts should be approximately ${readingTotal}. Do not stop generating early.
 
 The ${partCount} parts must be varied and follow the Cambridge exam format (e.g., Multiple-choice cloze, Open cloze, Word formation, Key word transformation, Multiple choice, Cross-text multiple matching, Gapped text, Multiple matching).
 For each of the ${partCount} parts, provide: 'title', 'instructions', 'content' (the reading text), and a 'questions' array with an appropriate number of questions for that part type.
+The ${partCount} parts must be varied and follow the Cambridge exam format (e.g., Multiple-choice cloze, Open cloze, Word formation, Multiple choice).
+For each of the ${partCount} parts, provide: 'title', 'instructions', 'content' (the reading text), and a 'questions' array with an appropriate number of questions for that part type (around ${readingQuestionCount} each).
 ${baseJsonInstructions} ${mcInstructions}
 Before finishing, double-check that you have generated exactly ${partCount} parts and a total number of questions close to ${readingTotal}.`;
           break;
