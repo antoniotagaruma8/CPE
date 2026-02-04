@@ -40,7 +40,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       let enhancedTopic = '';
       let partCount = 5;
       const baseJsonInstructions = "Output must be a valid JSON array of objects. Do not wrap the output in markdown code blocks. Ensure strict JSON syntax. Escape all double quotes within strings. Do not use string concatenation (e.g. '...' + '...') in JSON values. The 'content' field must be a single string.";
-      const mcInstructions = "For each question, provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques to answer this type of question.";
+      const mcInstructions = "For EVERY question, including those for 'open cloze', 'gapped text', or 'word formation' parts, you MUST generate a multiple-choice question with 4 distinct options (A, B, C, D). One option must be the correct answer. Provide the correct option letter in the 'correctOption' field (e.g., 'A'). Also provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques for that specific question type.";
 
       switch (examType) {
         case 'Writing':
