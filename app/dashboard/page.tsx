@@ -322,14 +322,18 @@ export default function DashboardPage() {
             <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-3">
               Part {activePartData?.part}: {activePartData?.title}
             </h2>
-            <div className="prose prose-slate max-w-none text-gray-800 leading-relaxed whitespace-pre-line">
-              {activePartData?.instructions}
+            <div className="prose prose-slate max-w-none text-gray-800 leading-relaxed">
+              {(activePartData?.instructions || '').split('\n').filter(line => line.trim()).map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
             </div>
             {activePartData?.content && (
               <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
                 <h4 className="font-semibold text-slate-600 mb-2 text-sm uppercase tracking-wider">Context</h4>
-                <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed whitespace-pre-line">
-                  {activePartData.content}
+                <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed">
+                  {(activePartData.content || '').split('\n').filter(line => line.trim()).map((line, index) => (
+                    <p key={index}>{line}</p>
+                  ))}
                 </div>
               </div>
             )}
