@@ -44,26 +44,65 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
       switch (examType) {
         case 'Writing':
-          partCount = 5;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct writing tasks following the Cambridge ${cefrLevel} exam format. Part 1: Compulsory Essay (summarizing and evaluating two input texts). Parts 2-5: Choice of different task types (e.g., Report, Review, Proposal, Letter). For each part, provide 'title', 'instructions', and 'content'. The 'content' field must be a single string containing the input text or prompt details. Do NOT generate multiple choice questions about the text. Instead, the 'questions' array for each part must contain exactly one object to allow the user to confirm completion. This question object should have: 'text': 'Have you completed this writing task?', 'options': ['Yes, task completed'], 'correctOption': 'A', 'explanation': 'Writing tasks are assessed on Content, Communicative Achievement, Organisation, and Language.'. ${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that specific writing task type.`;
+          partCount = 5; // C1/C2 has 2 parts, but we generate more for practice variety.
+          enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Writing exam.
+CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} distinct writing task objects. Do not stop generating early.
+
+The ${partCount} tasks should follow the format of:
+- Part 1: Compulsory Essay (summarizing and evaluating two input texts).
+- Parts 2-${partCount}: A choice of different task types (e.g., Report, Review, Proposal, Letter). Ensure these are distinct types.
+
+For each of the ${partCount} parts, provide: 'title', 'instructions', and 'content' (the input text or prompt details).
+The 'questions' array for each part MUST contain exactly one object to allow the user to confirm completion. This object should be:
+{ "text": "Have you completed this writing task?", "options": ["Yes, task completed"], "correctOption": "A", "explanation": "Writing tasks are assessed on Content, Communicative Achievement, Organisation, and Language." }
+${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that specific writing task type.
+Before finishing, double-check that you have generated exactly ${partCount} writing tasks.`;
           break;
         case 'Listening':
           partCount = 4;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct listening parts following the Cambridge ${cefrLevel} exam format. Part 1: Three short unrelated extracts (Multiple Choice). Part 2: Monologue (Sentence completion - adapt to Multiple Choice). Part 3: Interview/Discussion (Multiple Choice). Part 4: Five short themed monologues (Multiple Matching - adapt to Multiple Choice). Provide the transcript in the 'content' field. Generate exactly 5 multiple choice questions per part (Total 20 questions). ${baseJsonInstructions} ${mcInstructions}`;
+          const listeningQuestionCount = 6; // C1 has 6 questions per part.
+          const listeningTotal = partCount * listeningQuestionCount;
+          enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Listening exam.
+CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects.
+Each of these ${partCount} part objects MUST contain an array of EXACTLY ${listeningQuestionCount} question objects.
+This means the final JSON must contain a TOTAL of ${listeningTotal} questions. Do not stop generating early.
+
+The ${partCount} parts should follow the Cambridge format. For each part, provide: 'title', 'instructions', 'content' (the audio transcript), and a 'questions' array with ${listeningQuestionCount} questions.
+${baseJsonInstructions} ${mcInstructions}
+Before finishing, double-check that you have generated exactly ${partCount} parts and a total of ${listeningTotal} questions.`;
           break;
         case 'Speaking':
           partCount = 3;
-          enhancedTopic = `${topic}. STRICT REQUIREMENT: Generate exactly ${partCount} distinct speaking parts following the Cambridge ${cefrLevel} exam format. Part 1: Interview. Part 2: Long turn (comparing photographs - describe them in content). Part 3: Collaborative task/Discussion. Provide the interlocutor script in the 'content' field. The 'questions' array should contain the specific prompts/questions the examiner asks. Generate exactly 7 questions per part (Total 21 questions). For each question object, set 'options' to ['Next'], 'correctOption' to 'A', and 'explanation' to 'Focus on fluency and coherence.'. ${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that speaking part.`;
+          const speakingQuestionCount = 7;
+          const speakingTotal = partCount * speakingQuestionCount;
+          enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Speaking exam.
+CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects.
+Each of these ${partCount} part objects MUST contain an array of EXACTLY ${speakingQuestionCount} question objects (prompts for the candidate).
+This means the final JSON must contain a TOTAL of ${speakingTotal} questions. Do not stop generating early.
+
+The ${partCount} parts should follow the format of: Part 1 (Interview), Part 2 (Long turn), Part 3 (Collaborative task).
+For each part, provide: 'title', 'instructions', 'content' (the interlocutor script and/or visual prompts like photo descriptions), and a 'questions' array with ${speakingQuestionCount} prompts.
+For each question object, set 'options' to ["Next"], 'correctOption' to "A", and 'explanation' to "Focus on fluency and coherence.".
+${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that speaking part.
+Before finishing, double-check that you have generated exactly ${partCount} parts and a total of ${speakingTotal} questions.`;
           break;
         case 'Reading':
         default:
-          partCount = 5;
-          enhancedTopic = `${topic}. CRITICAL: Generate a JSON array of EXACTLY 5 exam parts. Part 1 (Cloze), Part 5 (Long Text), Part 6 (Cross-text), Part 7 (Gapped), Part 8 (Matching). Each part MUST have a unique reading text (approx 250 words) and EXACTLY 5 questions. TOTAL QUESTIONS MUST BE 25. Do not stop early. ${baseJsonInstructions} ${mcInstructions}`;
+          partCount = 8; // C1/C2 Reading & Use of English has 8 parts.
+          const readingQuestionCount = 6; // Average questions per part.
+          const readingTotal = 52; // Approximate total for C1.
+          enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Reading & Use of English exam.
+CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects. The total number of questions across all parts should be approximately ${readingTotal}. Do not stop generating early.
+
+The ${partCount} parts must be varied and follow the Cambridge exam format (e.g., Multiple-choice cloze, Open cloze, Word formation, Key word transformation, Multiple choice, Cross-text multiple matching, Gapped text, Multiple matching).
+For each of the ${partCount} parts, provide: 'title', 'instructions', 'content' (the reading text), and a 'questions' array with an appropriate number of questions for that part type.
+${baseJsonInstructions} ${mcInstructions}
+Before finishing, double-check that you have generated exactly ${partCount} parts and a total number of questions close to ${readingTotal}.`;
           break;
       }
 
       console.log("Generating exam with enhanced topic:", enhancedTopic);
-      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 250, partCount);
+      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 300, partCount);
       if (result.success && result.content) {
         setGeneratedExam(result.content);
       } else {
