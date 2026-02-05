@@ -11,7 +11,7 @@ export async function generateImageAction(prompt: string) {
     // Using Stable Diffusion XL Base 1.0
     const modelId = "stabilityai/stable-diffusion-xl-base-1.0";
     const response = await fetch(
-      `https://api-inference.huggingface.co/models/${modelId}`,
+      `https://router.huggingface.co/hf-inference/models/${modelId}`,
       {
         headers: {
           Authorization: `Bearer ${apiKey}`,

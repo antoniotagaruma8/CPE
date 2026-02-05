@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useExam } from './ExamContext';
 import CliLoader from '../../components/CliLoader';
+import { generateImageAction } from '../actions/generateImageHF';
 
 interface Question {
   id: number;
@@ -15,6 +16,7 @@ interface Question {
   imagePrompts?: string[];
   possibleAnswers?: string[];
   tips?: string;
+  part1Questions?: { question: string; answer: string; tip: string }[];
 }
 
 interface ExamPart {
@@ -295,6 +297,7 @@ export default function DashboardPage() {
                     }).filter((s: string) => s && s.trim().length > 0),
                 possibleAnswers: q.possibleAnswers,
                 tips: q.tips,
+                part1Questions: q.part1Questions,
               });
             });
           }
@@ -460,6 +463,8 @@ export default function DashboardPage() {
   const activeQuestionData = examQuestions.find(q => q.id === currentQuestion);
   const activePartData = examParts.find(p => p.part === activeQuestionData?.part);
 
+  const isSpeakingWideLayout = examType === 'Speaking' && (activePartData?.part === 1 || activePartData?.part === 2);
+
   const getLevelLabel = (level: string) => {
     switch (level) {
       case 'A1': return 'A1 Beginner';
@@ -497,7 +502,7 @@ export default function DashboardPage() {
       </header>
 
       <main className="flex-1 flex overflow-hidden p-2 sm:p-4 gap-2 sm:gap-4">
-        <div className="flex-1 bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
+        <div className={`${isSpeakingWideLayout ? 'flex-[1]' : 'flex-1'} bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar`}>
           <div className="max-w-2xl mx-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-3">
               Part {activePartData?.part}: {activePartData?.title}
@@ -545,17 +550,42 @@ export default function DashboardPage() {
         </div>
 
         {examType !== 'Writing' && (
-          <div className="flex-1 bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
-          <div className="max-w-2xl mx-auto">
-            <h3 className="text-lg font-bold mb-4 text-gray-800 bg-gray-100 p-3 rounded border-l-4 border-blue-500">
-              Question {currentQuestion}
-            </h3>
+          <div className={`${isSpeakingWideLayout ? 'flex-[3]' : 'flex-1'} bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar`}>
+          <div className={`${isSpeakingWideLayout ? 'max-w-none' : 'max-w-2xl'} mx-auto`}>
+            {examType !== 'Speaking' && (
+              <h3 className="text-lg font-bold mb-4 text-gray-800 bg-gray-100 p-3 rounded border-l-4 border-blue-500">
+                Question {currentQuestion}
+              </h3>
+            )}
             
             {activeQuestionData && (
               <div className="space-y-6">
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="font-semibold text-gray-800 mb-4 whitespace-pre-line">{activeQuestionData.question}</div>
-                  
+                  {activeQuestionData.part1Questions && activeQuestionData.part1Questions.length > 0 ? (
+                    <div className="space-y-6">
+                      <div className="font-semibold text-gray-800 mb-4">{activeQuestionData.question}</div>
+                      {activeQuestionData.part1Questions.map((item, idx) => (
+                        <div key={idx} className="p-4 bg-white rounded border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4">
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900 mb-3">{idx + 1}. {item.question}</p>
+                            <div className="text-sm text-gray-600 flex gap-2 items-start">
+                              <span className="font-bold text-yellow-600 shrink-0">Tip:</span> 
+                              <span>{item.tip}</span>
+                            </div>
+                          </div>
+                          <div className="flex-1 md:border-l md:border-gray-100 md:pl-4">
+                            <div className="text-sm text-gray-700 bg-blue-50 p-3 rounded border border-blue-100 h-full">
+                              <span className="font-bold text-blue-800 block mb-1">Possible Answer:</span> 
+                              {item.answer}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="font-semibold text-gray-800 mb-4 whitespace-pre-line">{activeQuestionData.question}</div>
+                  )}
+
                   {activeQuestionData.imagePrompts && activeQuestionData.imagePrompts.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       {activeQuestionData.imagePrompts.map((prompt, idx) => (

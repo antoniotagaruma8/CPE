@@ -89,7 +89,14 @@ Before finishing, double-check that you have generated exactly ${partCount} part
 CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects.
 
 The ${partCount} parts should follow the format of:
-- Part 1 (Interview): Provide 'title', 'instructions', 'content' (interlocutor script). The 'questions' array MUST contain EXACTLY ONE object. The 'question' field of this object MUST contain a list of 8 distinct interview questions separated by newlines. Set 'options' to [].
+- Part 1 (Interview): Provide 'title', 'instructions', 'content' (interlocutor script). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:
+  - 'question': "Interview Questions".
+  - 'options': [].
+  - 'tips': A general strategy on how to address and approach Part 1 (e.g. "Give full answers, but don't dominate...").
+  - 'part1Questions': An array of 8 objects, each containing:
+    - 'question': The interview question text.
+    - 'answer': A comprehensive, high-scoring sample answer (2-3 sentences) demonstrating advanced vocabulary.
+    - 'tip': A specific tip for this question.
 - Part 2 (Long turn): Provide 'title', 'instructions', 'content' (task description). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:
   - 'question': The task prompt (e.g., "Compare these two pictures...").
   - 'options': [].
