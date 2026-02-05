@@ -21,9 +21,10 @@ interface ExamPart {
   content: string;
   examinerNotes?: string;
   audioUrl?: string;
+  audioError?: string;
 }
 
-const AudioPlayer = ({ text, audioUrl, examType }: { text: string; audioUrl?: string, examType: string }) => {
+const AudioPlayer = ({ text, audioUrl, audioError, examType }: { text: string; audioUrl?: string, audioError?: string, examType: string }) => {
   const [playing, setPlaying] = useState(false);
 
   if (audioUrl) {
@@ -43,7 +44,7 @@ const AudioPlayer = ({ text, audioUrl, examType }: { text: string; audioUrl?: st
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
         <div className="font-bold text-sm">Audio Generation Failed</div>
       </div>
-      <p className="text-xs mt-2 ml-7">Could not connect to the audio generation service (ElevenLabs). This is likely due to an invalid or missing API key. Please check your <code>.env.local</code> file and restart the server.</p>
+      <p className="text-xs mt-2 ml-7">{audioError || "Could not connect to the audio generation service (ElevenLabs). This is likely due to an invalid or missing API key."}</p>
     </div>
   );
 
@@ -192,6 +193,7 @@ export default function DashboardPage() {
               content: partData.content || partData.text || '',
               examinerNotes: partData.examinerNotes || '',
               audioUrl: partData.audioUrl,
+              audioError: partData.audioError,
             });
 
             partData.questions.forEach((q: any) => {
@@ -428,7 +430,7 @@ export default function DashboardPage() {
                 
                 {examType === 'Listening' ? (
                   <>
-                    <AudioPlayer text={activePartData.content} audioUrl={activePartData.audioUrl} examType={examType} />
+                    <AudioPlayer text={activePartData.content} audioUrl={activePartData.audioUrl} audioError={activePartData.audioError} examType={examType} />
                     <details className="text-xs text-slate-400 mt-2">
                       <summary className="cursor-pointer hover:text-slate-600 transition-colors">Show Transcript</summary>
                       <p className="mt-2 p-2 bg-white rounded border border-slate-100 italic">{activePartData.content}</p>

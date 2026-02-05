@@ -16,7 +16,7 @@ export async function generateAudioAction(text: string) {
     // Voice ID for "Rachel" (American, Clear) - Replace with any voice ID you prefer
     // See https://api.elevenlabs.io/v1/voices for a list if needed
     const voiceId = '21m00Tcm4TlvDq8ikWAM'; 
-    const modelId = 'eleven_monolingual_v1'; // or 'eleven_turbo_v2' for lower latency
+    const modelId = 'eleven_turbo_v2'; // Faster and lower latency
 
     console.log("Attempting to generate audio via ElevenLabs SDK...");
     const client = new ElevenLabsClient({ apiKey });
@@ -41,6 +41,14 @@ export async function generateAudioAction(text: string) {
     return { success: true, audioUrl };
   } catch (error) {
     console.error('Error generating audio:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to generate audio' };
+    let errorMessage = error instanceof Error ? error.message : 'Failed to generate audio';
+    
+    if (errorMessage.includes("401")) {
+      errorMessage = "Invalid API Key. Please check your ELEVENLABS_API_KEY.";
+    } else if (errorMessage.includes("429")) {
+      errorMessage = "ElevenLabs quota exceeded or rate limit reached.";
+    }
+    
+    return { success: false, error: errorMessage };
   }
 }

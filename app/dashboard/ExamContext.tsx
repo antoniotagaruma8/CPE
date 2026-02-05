@@ -133,6 +133,7 @@ Before finishing, double-check that you have generated exactly ${partCount} part
                   return { ...part, audioUrl: audioResult.audioUrl };
                 } else {
                   console.error("Audio generation failed:", audioResult.error);
+                  return { ...part, audioError: audioResult.error };
                 }
               }
               return part;
