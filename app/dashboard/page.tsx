@@ -512,7 +512,7 @@ export default function DashboardPage() {
                       );
                     })}
                     </div>
-                  ) : (
+                  ) : examType === 'Speaking' ? null : (
                     <div className="space-y-4">
                       <div className="flex gap-2">
                         <input
