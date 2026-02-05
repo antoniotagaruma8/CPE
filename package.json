@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "elevenlabs": "^0.17.0",
+    "elevenlabs": "^1.50.0",
     "groq-sdk": "^0.37.0",
     "next": "16.1.6",
     "react": "19.2.3",

@@ -41,6 +41,6 @@ export async function generateAudioAction(text: string) {
     return { success: true, audioUrl };
   } catch (error) {
     console.error('Error generating audio:', error);
-    return { success: false, error: 'Failed to generate audio' };
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to generate audio' };
   }
 }
