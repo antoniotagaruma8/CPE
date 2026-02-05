@@ -341,8 +341,8 @@ export default function DashboardPage() {
   }, [timeLeft]);
 
   const handleSubmitAnswer = () => {
-    if (!answers[currentQuestion]) {
-      // Do not submit if no answer is selected
+    if (!answers[currentQuestion] && examType !== 'Speaking') {
+      // Do not submit if no answer is selected, unless it's a Speaking exam
       return;
     }
     setSubmittedQuestions(prev => new Set(prev).add(currentQuestion));
@@ -463,7 +463,8 @@ export default function DashboardPage() {
   const activeQuestionData = examQuestions.find(q => q.id === currentQuestion);
   const activePartData = examParts.find(p => p.part === activeQuestionData?.part);
 
-  const isSpeakingWideLayout = examType === 'Speaking' && (activePartData?.part === 1 || activePartData?.part === 2);
+  const isSpeakingWideLayout = examType === 'Speaking';
+  const isSpeakingPart3 = examType === 'Speaking' && activePartData?.part === 3;
 
   const getLevelLabel = (level: string) => {
     switch (level) {
@@ -560,7 +561,8 @@ export default function DashboardPage() {
             
             {activeQuestionData && (
               <div className="space-y-6">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className={`p-4 bg-gray-50 rounded-lg border border-gray-200 ${isSpeakingPart3 ? 'flex flex-col md:flex-row gap-6' : ''}`}>
+                  <div className={isSpeakingPart3 ? 'flex-1' : ''}>
                   {activeQuestionData.part1Questions && activeQuestionData.part1Questions.length > 0 ? (
                     <div className="space-y-6">
                       <div className="font-semibold text-gray-800 mb-4">{activeQuestionData.question}</div>
@@ -678,9 +680,36 @@ export default function DashboardPage() {
                       )}
                     </div>
                   )}
+                  </div>
+
+                  {isSpeakingPart3 && (
+                    <div className="flex-1 space-y-4 md:border-l md:border-gray-200 md:pl-6">
+                        {activeQuestionData.tips && (
+                           <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg shadow-sm">
+                             <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                               <span>💡</span> Tip for this Part
+                             </h4>
+                             <p className="text-sm text-yellow-800 leading-relaxed">{activeQuestionData.tips}</p>
+                           </div>
+                        )}
+                        
+                        {activeQuestionData.possibleAnswers && activeQuestionData.possibleAnswers.length > 0 && (
+                           <div className="p-4 bg-indigo-50 border-l-4 border-indigo-400 rounded-r-lg shadow-sm">
+                             <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                               <span>🗣️</span> Possible Answers / Useful Language
+                             </h4>
+                             <ul className="list-disc list-inside text-sm text-indigo-800 space-y-1">
+                               {activeQuestionData.possibleAnswers.map((ans, idx) => (
+                                 <li key={idx} className="leading-relaxed">{ans}</li>
+                               ))}
+                             </ul>
+                           </div>
+                        )}
+                    </div>
+                  )}
                 </div>
 
-                {(activeQuestionData.tips || (activeQuestionData.possibleAnswers && activeQuestionData.possibleAnswers.length > 0)) && (
+                {!isSpeakingPart3 && (activeQuestionData.tips || (activeQuestionData.possibleAnswers && activeQuestionData.possibleAnswers.length > 0)) && (
                   <div className="space-y-4 animate-fade-in">
                     {activeQuestionData.tips && (
                        <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg shadow-sm">
@@ -765,9 +794,11 @@ export default function DashboardPage() {
               }
             }}
             disabled={(!submittedQuestions.has(currentQuestion) && !answers[currentQuestion]) || (submittedQuestions.has(currentQuestion) && currentQuestion === totalQuestions)}
+            disabled={(!submittedQuestions.has(currentQuestion) && !answers[currentQuestion] && examType !== 'Speaking') || (submittedQuestions.has(currentQuestion) && currentQuestion === totalQuestions)}
             className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-sm font-bold transition-colors text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submittedQuestions.has(currentQuestion) ? 'Next' : 'Submit'}
+            {submittedQuestions.has(currentQuestion) ? 'Next' : (examType === 'Speaking' ? 'Done' : 'Submit')}
           </button>
         </div>
         

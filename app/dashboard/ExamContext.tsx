@@ -101,9 +101,13 @@ The ${partCount} parts should follow the format of:
   - 'question': The task prompt (e.g., "Compare these two pictures...").
   - 'options': [].
   - 'imagePrompts': An array of strings (e.g. ["A busy city street", "A quiet park"]). Provide exactly 2 distinct visual descriptions.
-  - 'possibleAnswers': An array of 3-4 example phrases or sentences a candidate could use to answer.
-  - 'tips': A string containing advice on how to approach this specific task (e.g., "Focus on comparing, not just describing...").
-- Part 3 (Collaborative task): Provide 'title', 'instructions', 'content' (context). The 'questions' array MUST contain EXACTLY ONE object with the discussion prompt. Set 'options' to ["Next"].
+  - 'possibleAnswers': An array of 3-4 comprehensive, high-scoring example sentences or short paragraphs a candidate could use to answer, demonstrating advanced vocabulary and grammar structures suitable for ${cefrLevel}.
+  - 'tips': A detailed string containing advice on how to approach this specific task, including what to focus on (comparing, speculating, contrasting) and what to avoid.
+- Part 3 (Collaborative task): Provide 'title', 'instructions', 'content' (context). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:
+  - 'question': The discussion prompt (e.g., "Here are some things... Talk to each other about...").
+  - 'options': [].
+  - 'possibleAnswers': An array of 3-4 comprehensive, high-scoring example phrases or sentences candidates could use to initiate, maintain, or conclude the discussion, demonstrating advanced vocabulary and grammar suitable for ${cefrLevel}.
+  - 'tips': A detailed string containing advice on how to approach this specific collaborative task, including turn-taking, agreeing/disagreeing politely, and reaching a decision.
 
 For Part 2 and 3, set 'correctOption' to "A". For all parts, set 'explanation' to "Focus on fluency and coherence.".
 ${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that speaking part.
