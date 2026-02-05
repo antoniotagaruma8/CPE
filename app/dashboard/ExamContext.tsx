@@ -58,7 +58,7 @@ For each of the ${partCount} parts, provide:
 - 'instructions': Instructions for the candidate.
 - 'content': The input text or prompt details.
 - 'tips': Comprehensive tips and strategies for this specific writing task type (e.g. structure, tone, key language).
-- 'modelAnswer': A comprehensive, high-scoring model answer for this task. It must be detailed, well-structured, and demonstrate advanced vocabulary and grammar appropriate for ${cefrLevel} level.
+- 'modelAnswer': A comprehensive, high-scoring model answer for this task. It must be detailed, well-structured, and demonstrate advanced vocabulary and grammar appropriate for ${cefrLevel} level. IMPORTANT: If the task (especially Part 5) is a Letter or Email, the model answer MUST look like a real letter/email (including opening/closing salutations, date if applicable, and proper layout). For Parts 2-4, ensure the model answer is clearly separated into paragraphs or sections with headings if appropriate.
 - 'howToApproach': A detailed step-by-step guide on how to approach this task (e.g. 1. Analyze the question, 2. Plan your paragraphs...).
 - 'questions': An array containing exactly one object: { "text": "Have you completed this writing task?", "options": ["Yes, task completed"], "correctOption": "A", "explanation": "Writing tasks are assessed on Content, Communicative Achievement, Organisation, and Language." }
 
