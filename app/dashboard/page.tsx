@@ -541,7 +541,7 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-3">
                   <svg className="w-6 h-6 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l.707.707M6.343 17.657l-.707-.707m12.728 0l.707-.707M12 21v-1m-4-4H7v4h1v-4zm8 0h1v4h-1v-4z" /></svg>
                   <div>
-                    <h4 className="font-bold text-green-800">Tip</h4>
+                    <h4 className="font-bold text-green-800">Tips</h4>
                     <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{activePartData.examinerNotes}</p>
                   </div>
                 </div>
@@ -571,7 +571,7 @@ export default function DashboardPage() {
                           <div className="flex-1">
                             <p className="font-semibold text-gray-900 mb-3">{idx + 1}. {item.question}</p>
                             <div className="text-sm text-gray-600 flex gap-2 items-start">
-                              <span className="font-bold text-yellow-600 shrink-0">Tip:</span> 
+                              <span className="font-bold text-yellow-600 shrink-0">Tips:</span> 
                               <span>{item.tip}</span>
                             </div>
                           </div>
@@ -586,6 +586,15 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <div className="font-semibold text-gray-800 mb-4 whitespace-pre-line">{activeQuestionData.question}</div>
+                  )}
+
+                  {isSpeakingPart3 && activeQuestionData.tips && (
+                     <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg shadow-sm mb-6">
+                       <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                         <span>💡</span> Tips
+                       </h4>
+                       <p className="text-sm text-yellow-800 leading-relaxed">{activeQuestionData.tips}</p>
+                     </div>
                   )}
 
                   {activeQuestionData.imagePrompts && activeQuestionData.imagePrompts.length > 0 && (
@@ -684,14 +693,6 @@ export default function DashboardPage() {
 
                   {isSpeakingPart3 && (
                     <div className="flex-1 space-y-4 md:border-l md:border-gray-200 md:pl-6">
-                        {activeQuestionData.tips && (
-                           <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg shadow-sm">
-                             <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
-                               <span>💡</span> Tip for this Part
-                             </h4>
-                             <p className="text-sm text-yellow-800 leading-relaxed">{activeQuestionData.tips}</p>
-                           </div>
-                        )}
                         
                         {activeQuestionData.possibleAnswers && activeQuestionData.possibleAnswers.length > 0 && (
                            <div className="p-4 bg-indigo-50 border-l-4 border-indigo-400 rounded-r-lg shadow-sm">
@@ -714,7 +715,7 @@ export default function DashboardPage() {
                     {activeQuestionData.tips && (
                        <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg shadow-sm">
                          <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
-                           <span>💡</span> Tip for this Part
+                           <span>💡</span> Tips
                          </h4>
                          <p className="text-sm text-yellow-800 leading-relaxed">{activeQuestionData.tips}</p>
                        </div>
@@ -751,7 +752,7 @@ export default function DashboardPage() {
                         <div className="flex items-start gap-3">
                           <svg className="w-6 h-6 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l.707.707M6.343 17.657l-.707-.707m12.728 0l.707-.707M12 21v-1m-4-4H7v4h1v-4zm8 0h1v4h-1v-4z" /></svg>
                           <div>
-                            <h4 className="font-bold text-green-800">Tip</h4>
+                            <h4 className="font-bold text-green-800">Tips</h4>
                             <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{activePartData.examinerNotes}</p>
                           </div>
                         </div>
@@ -793,11 +794,9 @@ export default function DashboardPage() {
                 handleSubmitAnswer();
               }
             }}
-            disabled={(!submittedQuestions.has(currentQuestion) && !answers[currentQuestion]) || (submittedQuestions.has(currentQuestion) && currentQuestion === totalQuestions)}
             disabled={(!submittedQuestions.has(currentQuestion) && !answers[currentQuestion] && examType !== 'Speaking') || (submittedQuestions.has(currentQuestion) && currentQuestion === totalQuestions)}
             className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-sm font-bold transition-colors text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submittedQuestions.has(currentQuestion) ? 'Next' : 'Submit'}
             {submittedQuestions.has(currentQuestion) ? 'Next' : (examType === 'Speaking' ? 'Done' : 'Submit')}
           </button>
         </div>
