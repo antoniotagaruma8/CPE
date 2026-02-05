@@ -16,6 +16,7 @@ export async function generateAudioAction(text: string) {
     const voiceId = '21m00Tcm4TlvDq8ikWAM'; 
     const modelId = 'eleven_monolingual_v1'; // or 'eleven_turbo_v2' for lower latency
 
+    console.log("Attempting to generate audio via ElevenLabs...");
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {

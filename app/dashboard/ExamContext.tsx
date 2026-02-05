@@ -131,6 +131,8 @@ Before finishing, double-check that you have generated exactly ${partCount} part
                 const audioResult = await generateAudioAction(part.content);
                 if (audioResult.success) {
                   return { ...part, audioUrl: audioResult.audioUrl };
+                } else {
+                  console.error("Audio generation failed:", audioResult.error);
                 }
               }
               return part;
