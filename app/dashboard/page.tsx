@@ -20,7 +20,60 @@ interface ExamPart {
   instructions: string;
   content: string;
   examinerNotes?: string;
+  audioUrl?: string;
 }
+
+const AudioPlayer = ({ text, audioUrl }: { text: string; audioUrl?: string }) => {
+  const [playing, setPlaying] = useState(false);
+
+  if (audioUrl) {
+    return (
+      <div className="w-full p-4 bg-blue-50 rounded-lg border border-blue-100 mb-4">
+        <div className="text-sm font-bold text-blue-900 mb-2">Audio Track</div>
+        <audio controls src={audioUrl} className="w-full focus:outline-none" />
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  const togglePlay = () => {
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+    } else {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onend = () => setPlaying(false);
+      window.speechSynthesis.speak(utterance);
+      setPlaying(true);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-100 mb-4">
+      <button
+        onClick={togglePlay}
+        className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        title={playing ? "Stop Audio" : "Play Audio"}
+      >
+        {playing ? (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+        ) : (
+          <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+        )}
+      </button>
+      <div>
+        <div className="text-sm font-bold text-blue-900">Audio Track (TTS)</div>
+        <div className="text-xs text-blue-600">{playing ? 'Playing...' : 'Click to listen'}</div>
+      </div>
+    </div>
+  );
+};
 
 export default function DashboardPage() {
   const { 
@@ -122,6 +175,7 @@ export default function DashboardPage() {
               instructions: partData.instructions || '',
               content: partData.content || partData.text || '',
               examinerNotes: partData.examinerNotes || '',
+              audioUrl: partData.audioUrl,
             });
 
             partData.questions.forEach((q: any) => {
@@ -352,12 +406,25 @@ export default function DashboardPage() {
             </div>
             {activePartData?.content && (
               <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <h4 className="font-semibold text-slate-600 mb-2 text-sm uppercase tracking-wider">Context</h4>
-                <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed">
-                  {(activePartData.content || '').split('\n').filter(line => line.trim()).map((line, index) => (
-                    <p key={index}>{line}</p>
-                  ))}
-                </div>
+                <h4 className="font-semibold text-slate-600 mb-2 text-sm uppercase tracking-wider">
+                  {examType === 'Listening' ? 'Audio Context' : 'Context'}
+                </h4>
+                
+                {examType === 'Listening' ? (
+                  <>
+                    <AudioPlayer text={activePartData.content} audioUrl={activePartData.audioUrl} />
+                    <details className="text-xs text-slate-400 mt-2">
+                      <summary className="cursor-pointer hover:text-slate-600 transition-colors">Show Transcript</summary>
+                      <p className="mt-2 p-2 bg-white rounded border border-slate-100 italic">{activePartData.content}</p>
+                    </details>
+                  </>
+                ) : (
+                  <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed">
+                    {(activePartData.content || '').split('\n').filter(line => line.trim()).map((line, index) => (
+                      <p key={index}>{line}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             {examType === 'Writing' && submittedQuestions.has(currentQuestion) && activePartData?.examinerNotes && (
@@ -385,7 +452,9 @@ export default function DashboardPage() {
               <div className="space-y-6">
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <p className="font-semibold text-gray-800 mb-4">{activeQuestionData.question}</p>
-                  <div className="space-y-3">
+                  
+                  {activeQuestionData.options && activeQuestionData.options.length > 0 ? (
+                    <div className="space-y-3">
                     {activeQuestionData.options.map((opt, index) => {
                       const letter = String.fromCharCode('A'.charCodeAt(0) + index);
                       const isSubmitted = submittedQuestions.has(currentQuestion);
@@ -421,7 +490,30 @@ export default function DashboardPage() {
                         </label>
                       );
                     })}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <input
+                        type="text"
+                        value={answers[currentQuestion] || ''}
+                        onChange={(e) => handleAnswer(currentQuestion, e.target.value)}
+                        disabled={submittedQuestions.has(currentQuestion)}
+                        placeholder="Type your answer here..."
+                        className={`w-full p-3 rounded-md border outline-none transition-all ${
+                          submittedQuestions.has(currentQuestion)
+                            ? (answers[currentQuestion] || '').trim().toLowerCase() === activeQuestionData.correctOption.trim().toLowerCase()
+                              ? 'border-green-500 bg-green-50 text-green-900'
+                              : 'border-red-500 bg-red-50 text-red-900'
+                            : 'border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                        }`}
+                      />
+                      {submittedQuestions.has(currentQuestion) && (answers[currentQuestion] || '').trim().toLowerCase() !== activeQuestionData.correctOption.trim().toLowerCase() && (
+                         <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-100">
+                           <span className="font-bold">Correct Answer:</span> {activeQuestionData.correctOption}
+                         </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {submittedQuestions.has(currentQuestion) && (

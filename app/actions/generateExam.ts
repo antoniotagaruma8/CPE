@@ -15,7 +15,7 @@ if (apiKeys.length === 0) {
 // 2. Define models to rotate through. These are large, capable models suitable for complex generation.
 const models = [
   'llama-3.3-70b-versatile',
-  'mixtral-8x7b-32768',
+  'llama-3.1-8b-instant',
 ];
 
 export async function generateExamAction(

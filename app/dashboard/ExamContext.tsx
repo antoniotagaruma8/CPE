@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import { generateExamAction } from '../actions/generateExam';
+import { generateAudioAction } from '../actions/generateAudio';
 
 interface ExamContextType {
   examType: string;
@@ -40,7 +41,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       let enhancedTopic = '';
       let partCount = 5;
       const baseJsonInstructions = "Output must be a valid JSON array of objects. Do not wrap the output in markdown code blocks. Ensure strict JSON syntax. Escape all double quotes within strings. Do not use string concatenation (e.g. '...' + '...') in JSON values. The 'content' field must be a single string.";
-      const mcInstructions = "For EVERY question, including those for 'open cloze', 'gapped text', or 'word formation' parts, you MUST generate a multiple-choice question with 4 distinct options (A, B, C, D). One option must be the correct answer. Provide the correct option letter in the 'correctOption' field (e.g., 'A'). Do NOT include the option letter (e.g. 'A)') in the option text. Also provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques for that specific question type. For cloze or fill-in-the-blank questions in the 'content', format the blanks as bolded numbers with underscores, e.g., **(1)________**.";
+      const mcInstructions = "For EVERY question, including those for 'open cloze', 'gapped text', or 'word formation' parts, you MUST generate a multiple-choice question with 4 distinct options (A, B, C, D). One option must be the correct answer. Provide the correct option letter in the 'correctOption' field (e.g., 'A'). Do NOT include the option letter (e.g. 'A)') in the option text. Also provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques for that specific question type. For cloze or fill-in-the-blank parts: 1. The 'content' field MUST be the full, original reading text WITHOUT any gaps. Do NOT put the gapped text here. 2. The 'question' field in the 'questions' array MUST contain the sentence with the gap (e.g., 'The cat sat on the ________.'). Do NOT include the question number (e.g. (1)) in the gap. Do not use Markdown or HTML tags.";
 
       switch (examType) {
         case 'Writing':
@@ -67,8 +68,19 @@ CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY 
 Each of these ${partCount} part objects MUST contain an array of EXACTLY ${listeningQuestionCount} question objects.
 This means the final JSON must contain a TOTAL of ${listeningTotal} questions. Do not stop generating early.
 
-The ${partCount} parts should follow the Cambridge format. For each part, provide: 'title', 'instructions', 'content' (the audio transcript), and a 'questions' array with ${listeningQuestionCount} questions.
-${baseJsonInstructions} ${mcInstructions}
+The ${partCount} parts should follow the Cambridge format. For each part, provide:
+- 'title': Title of the section.
+- 'instructions': Instructions for the candidate.
+- 'content': The AUDIO TRANSCRIPT. This text will be read aloud to the user.
+- 'questions': An array of ${listeningQuestionCount} fill-in-the-blank questions.
+
+For the questions:
+- 'question': The sentence with a gap (e.g., "The train departs at ______.").
+- 'options': An empty array [].
+- 'correctOption': The correct word or phrase to fill the gap.
+- 'explanation': A brief explanation.
+
+${baseJsonInstructions}
 Before finishing, double-check that you have generated exactly ${partCount} parts and a total of ${listeningTotal} questions.`;
           break;
         case 'Speaking':
@@ -104,7 +116,37 @@ Before finishing, double-check that you have generated exactly ${partCount} part
       console.log("Generating exam with enhanced topic:", enhancedTopic);
       const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 300, partCount);
       if (result.success && result.content) {
-        setGeneratedExam(result.content);
+        let finalExamContent = result.content;
+
+        // If it's a Listening exam, generate audio for the transcripts
+        if (examType === 'Listening') {
+          try {
+            const examData = JSON.parse(result.content);
+            // Handle different structures (array vs object with parts)
+            const parts = Array.isArray(examData) ? examData : (examData.parts || []);
+            
+            // Generate audio for each part
+            const partsWithAudio = await Promise.all(parts.map(async (part: any) => {
+              if (part.content) {
+                const audioResult = await generateAudioAction(part.content);
+                if (audioResult.success) {
+                  return { ...part, audioUrl: audioResult.audioUrl };
+                }
+              }
+              return part;
+            }));
+
+            if (Array.isArray(examData)) {
+              finalExamContent = JSON.stringify(partsWithAudio);
+            } else {
+              finalExamContent = JSON.stringify({ ...examData, parts: partsWithAudio });
+            }
+          } catch (e) {
+            console.error("Error processing listening audio", e);
+          }
+        }
+
+        setGeneratedExam(finalExamContent);
       } else {
         setError(result.error || 'An unknown error occurred.');
       }
