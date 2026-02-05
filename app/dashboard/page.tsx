@@ -23,7 +23,7 @@ interface ExamPart {
   audioUrl?: string;
 }
 
-const AudioPlayer = ({ text, audioUrl }: { text: string; audioUrl?: string }) => {
+const AudioPlayer = ({ text, audioUrl, examType }: { text: string; audioUrl?: string, examType: string }) => {
   const [playing, setPlaying] = useState(false);
 
   if (audioUrl) {
@@ -34,6 +34,19 @@ const AudioPlayer = ({ text, audioUrl }: { text: string; audioUrl?: string }) =>
       </div>
     );
   }
+
+  const isListeningExamWithoutAudio = examType === 'Listening' && !audioUrl;
+
+  const ErrorMessage = () => (
+    <div className="w-full p-4 bg-red-50 rounded-lg border border-red-200 mb-4 text-red-700">
+      <div className="flex items-center gap-2">
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+        <div className="font-bold text-sm">Audio Generation Failed</div>
+      </div>
+      <p className="text-xs mt-2 ml-7">Could not connect to the audio generation service (ElevenLabs). This is likely due to an invalid or missing API key. Please check your <code>.env.local</code> file and restart the server.</p>
+    </div>
+  );
+
 
   useEffect(() => {
     return () => {
@@ -55,23 +68,26 @@ const AudioPlayer = ({ text, audioUrl }: { text: string; audioUrl?: string }) =>
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-100 mb-4">
-      <button
-        onClick={togglePlay}
-        className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        title={playing ? "Stop Audio" : "Play Audio"}
-      >
-        {playing ? (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-        ) : (
-          <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-        )}
-      </button>
-      <div>
-        <div className="text-sm font-bold text-blue-900">Audio Track (TTS)</div>
-        <div className="text-xs text-blue-600">{playing ? 'Playing...' : 'Click to listen'}</div>
+    <>
+      {isListeningExamWithoutAudio && <ErrorMessage />}
+      <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-100 mb-4">
+        <button
+          onClick={togglePlay}
+          className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          title={playing ? "Stop Audio" : "Play Audio"}
+        >
+          {playing ? (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+          ) : (
+            <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+          )}
+        </button>
+        <div>
+          <div className="text-sm font-bold text-blue-900">Audio Track (TTS Fallback)</div>
+          <div className="text-xs text-blue-600">{playing ? 'Playing...' : 'Click to listen'}</div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -412,7 +428,7 @@ export default function DashboardPage() {
                 
                 {examType === 'Listening' ? (
                   <>
-                    <AudioPlayer text={activePartData.content} audioUrl={activePartData.audioUrl} />
+                    <AudioPlayer text={activePartData.content} audioUrl={activePartData.audioUrl} examType={examType} />
                     <details className="text-xs text-slate-400 mt-2">
                       <summary className="cursor-pointer hover:text-slate-600 transition-colors">Show Transcript</summary>
                       <p className="mt-2 p-2 bg-white rounded border border-slate-100 italic">{activePartData.content}</p>

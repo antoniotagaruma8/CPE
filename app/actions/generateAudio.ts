@@ -1,6 +1,8 @@
 /* c:\Users\Anton\Desktop\OLD FILES\GOALS\AI\GitHub 2025\CPE\app\actions\generateAudio.ts */
 'use server';
 
+import { ElevenLabsClient } from "elevenlabs";
+
 export async function generateAudioAction(text: string) {
   if (!text) return { success: false, error: 'No text provided' };
 
@@ -16,31 +18,23 @@ export async function generateAudioAction(text: string) {
     const voiceId = '21m00Tcm4TlvDq8ikWAM'; 
     const modelId = 'eleven_monolingual_v1'; // or 'eleven_turbo_v2' for lower latency
 
-    console.log("Attempting to generate audio via ElevenLabs...");
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'xi-api-key': apiKey,
+    console.log("Attempting to generate audio via ElevenLabs SDK...");
+    const client = new ElevenLabsClient({ apiKey });
+
+    const audioStream = await client.textToSpeech.convert(voiceId, {
+      text,
+      model_id: modelId,
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
       },
-      body: JSON.stringify({
-        text,
-        model_id: modelId,
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-        },
-      }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('ElevenLabs API Error:', response.status, errorData);
-      return { success: false, error: `ElevenLabs API Error: ${response.statusText}` };
+    const chunks: Buffer[] = [];
+    for await (const chunk of audioStream) {
+      chunks.push(Buffer.from(chunk));
     }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = Buffer.concat(chunks);
     const base64Audio = buffer.toString('base64');
     const audioUrl = `data:audio/mp3;base64,${base64Audio}`;
 
