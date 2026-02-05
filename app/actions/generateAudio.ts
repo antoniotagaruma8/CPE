@@ -3,7 +3,20 @@
 
 import { ElevenLabsClient } from "elevenlabs";
 
-export async function generateAudioAction(text: string) {
+// Curated list of high-quality voices for Cambridge exam simulation
+// Alternating accents to provide variety (British, American, etc.)
+const EXAM_VOICES = [
+  { id: "JBFqnCBsd6RMkjVDRZzb", name: "George", accent: "British" },   // 0: British Male
+  { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", accent: "American" },  // 1: American Female
+  { id: "XB0fDUnXU5powFXDhCwa", name: "Charlotte", accent: "British" },// 2: British Female
+  { id: "ErXwobaYiN019PkySvjV", name: "Antoni", accent: "American" },  // 3: American Male
+  { id: "onwK4e9ZLuTAKqWW03F9", name: "Daniel", accent: "British" },   // 4: British Male
+  { id: "nPczCjz82INmrbartXRg", name: "Brian", accent: "American" },   // 5: American Male
+  { id: "pFZP5JQG7iQjIQuC4Bku", name: "Lily", accent: "British" },     // 6: British Female
+  { id: "CwhRBWXzGAHq8TQ4Fs17", name: "Roger", accent: "American" },   // 7: American Male
+];
+
+export async function generateAudioAction(text: string, index: number = 0) {
   if (!text) return { success: false, error: 'No text provided' };
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
@@ -13,15 +26,17 @@ export async function generateAudioAction(text: string) {
   }
 
   try {
-    // Voice ID for "Rachel" (American, Clear) - Replace with any voice ID you prefer
-    // See https://api.elevenlabs.io/v1/voices for a list if needed
-    const voiceId = '21m00Tcm4TlvDq8ikWAM'; 
+    // Select voice based on index to ensure rotation/variety across exam parts
+    // Use modulo to wrap around if there are more parts than voices
+    const voiceIndex = index % EXAM_VOICES.length;
+    const selectedVoice = EXAM_VOICES[voiceIndex];
+    
     const modelId = 'eleven_turbo_v2'; // Faster and lower latency
 
-    console.log("Attempting to generate audio via ElevenLabs SDK...");
+    console.log(`Generating audio using voice: ${selectedVoice.name} (${selectedVoice.accent})`);
     const client = new ElevenLabsClient({ apiKey });
 
-    const audioStream = await client.textToSpeech.convert(voiceId, {
+    const audioStream = await client.textToSpeech.convert(selectedVoice.id, {
       text,
       model_id: modelId,
       voice_settings: {

@@ -85,18 +85,17 @@ Before finishing, double-check that you have generated exactly ${partCount} part
           break;
         case 'Speaking':
           partCount = 3;
-          const speakingQuestionCount = 7;
-          const speakingTotal = partCount * speakingQuestionCount;
           enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Speaking exam.
 CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects.
-Each of these ${partCount} part objects MUST contain an array of EXACTLY ${speakingQuestionCount} question objects (prompts for the candidate).
-This means the final JSON must contain a TOTAL of ${speakingTotal} questions. Do not stop generating early.
 
-The ${partCount} parts should follow the format of: Part 1 (Interview), Part 2 (Long turn), Part 3 (Collaborative task).
-For each part, provide: 'title', 'instructions', 'content' (the interlocutor script and/or visual prompts like photo descriptions), and a 'questions' array with ${speakingQuestionCount} prompts.
+The ${partCount} parts should follow the format of:
+- Part 1 (Interview): Provide 'title', 'instructions', 'content' (interlocutor script). The 'questions' array MUST contain EXACTLY ONE object. The 'question' field of this object MUST contain a list of 8 distinct interview questions separated by newlines.
+- Part 2 (Long turn): Provide 'title', 'instructions', 'content' (describe visual prompts). The 'questions' array MUST contain EXACTLY ONE object with the task prompt.
+- Part 3 (Collaborative task): Provide 'title', 'instructions', 'content' (context). The 'questions' array MUST contain EXACTLY ONE object with the discussion prompt.
+
 For each question object, set 'options' to ["Next"], 'correctOption' to "A", and 'explanation' to "Focus on fluency and coherence.".
 ${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that speaking part.
-Before finishing, double-check that you have generated exactly ${partCount} parts and a total of ${speakingTotal} questions.`;
+Before finishing, double-check that you have generated exactly ${partCount} parts.`;
           break;
         case 'Reading':
         default:
@@ -126,9 +125,9 @@ Before finishing, double-check that you have generated exactly ${partCount} part
             const parts = Array.isArray(examData) ? examData : (examData.parts || []);
             
             // Generate audio for each part
-            const partsWithAudio = await Promise.all(parts.map(async (part: any) => {
+            const partsWithAudio = await Promise.all(parts.map(async (part: any, index: number) => {
               if (part.content) {
-                const audioResult = await generateAudioAction(part.content);
+                const audioResult = await generateAudioAction(part.content, index);
                 if (audioResult.success) {
                   return { ...part, audioUrl: audioResult.audioUrl };
                 } else {
