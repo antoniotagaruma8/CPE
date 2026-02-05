@@ -50,13 +50,19 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} distinct writing task objects. Do not stop generating early.
 
 The ${partCount} tasks should follow the format of:
-- Part 1: Compulsory Essay (summarizing and evaluating two input texts).
+- Part 1: Compulsory Essay (summarizing and evaluating two input texts). For this part, put the two input texts in the 'content' field, separated by the string "---SPLIT---".
 - Parts 2-${partCount}: A choice of different task types (e.g., Report, Review, Proposal, Letter). Ensure these are distinct types.
 
-For each of the ${partCount} parts, provide: 'title', 'instructions', and 'content' (the input text or prompt details).
-The 'questions' array for each part MUST contain exactly one object to allow the user to confirm completion. This object should be:
-{ "text": "Have you completed this writing task?", "options": ["Yes, task completed"], "correctOption": "A", "explanation": "Writing tasks are assessed on Content, Communicative Achievement, Organisation, and Language." }
-${baseJsonInstructions} For each part, provide 'examinerNotes' with a tip for that specific writing task type.
+For each of the ${partCount} parts, provide:
+- 'title': Title of the task.
+- 'instructions': Instructions for the candidate.
+- 'content': The input text or prompt details.
+- 'tips': Comprehensive tips and strategies for this specific writing task type (e.g. structure, tone, key language).
+- 'modelAnswer': A comprehensive, high-scoring model answer for this task. It must be detailed, well-structured, and demonstrate advanced vocabulary and grammar appropriate for ${cefrLevel} level.
+- 'howToApproach': A detailed step-by-step guide on how to approach this task (e.g. 1. Analyze the question, 2. Plan your paragraphs...).
+- 'questions': An array containing exactly one object: { "text": "Have you completed this writing task?", "options": ["Yes, task completed"], "correctOption": "A", "explanation": "Writing tasks are assessed on Content, Communicative Achievement, Organisation, and Language." }
+
+${baseJsonInstructions}
 Before finishing, double-check that you have generated exactly ${partCount} writing tasks.`;
           break;
         case 'Listening':

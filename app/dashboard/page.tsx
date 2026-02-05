@@ -27,6 +27,9 @@ interface ExamPart {
   examinerNotes?: string;
   audioUrl?: string;
   audioError?: string;
+  tips?: string;
+  modelAnswer?: string;
+  howToApproach?: string;
 }
 
 const AudioPlayer = ({ text, audioUrl, audioError, examType }: { text: string; audioUrl?: string, audioError?: string, examType: string }) => {
@@ -270,6 +273,9 @@ export default function DashboardPage() {
               examinerNotes: partData.examinerNotes || '',
               audioUrl: partData.audioUrl,
               audioError: partData.audioError,
+              tips: partData.tips,
+              modelAnswer: partData.modelAnswer,
+              howToApproach: partData.howToApproach,
             });
 
             partData.questions.forEach((q: any) => {
@@ -341,7 +347,7 @@ export default function DashboardPage() {
   }, [timeLeft]);
 
   const handleSubmitAnswer = () => {
-    if (!answers[currentQuestion] && examType !== 'Speaking') {
+    if (!answers[currentQuestion] && examType !== 'Speaking' && examType !== 'Writing') {
       // Do not submit if no answer is selected, unless it's a Speaking exam
       return;
     }
@@ -484,26 +490,27 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col h-screen bg-[#e9e9e9] font-sans text-[#333]">
-      <header className="h-16 bg-white border-b border-gray-300 flex items-center justify-between px-6 shrink-0 shadow-sm z-10">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-gray-700">{getLevelLabel(cefrLevel)}: {getExamTypeLabel(examType)}</h1>
+      <header className="bg-white border-b border-gray-300 flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-2 sm:py-0 shrink-0 shadow-sm z-10 gap-2 sm:gap-0 h-auto sm:h-16">
+        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+          <h1 className="text-base sm:text-lg font-semibold text-gray-700 truncate">{getLevelLabel(cefrLevel)}: {getExamTypeLabel(examType)}</h1>
           <div className="h-6 w-px bg-gray-300"></div>
-          <div className="text-sm text-gray-600">Candidate: <span className="font-bold text-black">Guest User</span></div>
+          <div className="text-xs sm:text-sm text-gray-600 hidden sm:block">Candidate: <span className="font-bold text-black">Guest User</span></div>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-end">
           <div className="flex flex-col items-end">
-            <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Time Remaining</span>
-            <span className="text-xl font-mono font-bold text-gray-900">{formatTime(timeLeft)}</span>
+            <span className="text-[8px] sm:text-[10px] uppercase tracking-wider text-gray-500 font-bold">Time Remaining</span>
+            <span className="text-lg sm:text-xl font-mono font-bold text-gray-900">{formatTime(timeLeft)}</span>
           </div>
-          <button className="bg-gray-700 text-white px-4 py-2 rounded text-sm font-bold hover:bg-gray-800 transition-colors flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-            Share Public Link
+          <button className="bg-gray-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded text-xs sm:text-sm font-bold hover:bg-gray-800 transition-colors flex items-center gap-2">
+            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+            <span className="hidden sm:inline">Share Public Link</span>
+            <span className="sm:hidden">Share</span>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden p-2 sm:p-4 gap-2 sm:gap-4">
-        <div className={`${isSpeakingWideLayout ? 'flex-[1]' : 'flex-1'} bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar`}>
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 sm:p-4 gap-2 sm:gap-4">
+        <div className={`${isSpeakingWideLayout ? 'lg:flex-[1]' : 'flex-1'} bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-4 sm:p-6 custom-scrollbar`}>
           <div className="max-w-2xl mx-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-3">
               Part {activePartData?.part}: {activePartData?.title}
@@ -529,37 +536,67 @@ export default function DashboardPage() {
                   </>
                 ) : (
                   <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed">
-                    {(activePartData.content || '').split('\n').filter(line => line.trim()).map((line, index) => (
-                      <p key={index}>{line}</p>
-                    ))}
+                    {examType === 'Writing' && activePartData.part === 1 && activePartData.content.includes('---SPLIT---') ? (
+                      activePartData.content.split('---SPLIT---').map((text, idx) => (
+                        <div key={idx} className="mb-4 p-4 bg-white rounded border border-gray-200 shadow-sm last:mb-0">
+                          <h5 className="font-bold text-gray-800 mb-2 text-xs uppercase tracking-wider">Text {idx + 1}</h5>
+                          {text.split('\n').filter(line => line.trim()).map((line, i) => (
+                            <p key={i} className="mb-2 last:mb-0">{line}</p>
+                          ))}
+                        </div>
+                      ))
+                    ) : (
+                      (activePartData.content || '').split('\n').filter(line => line.trim()).map((line, index) => (
+                        <p key={index}>{line}</p>
+                      ))
+                    )}
                   </div>
                 )}
-              </div>
-            )}
-            {examType === 'Writing' && submittedQuestions.has(currentQuestion) && activePartData?.examinerNotes && (
-              <div className="mt-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-r-lg animate-fade-in">
-                <div className="flex items-start gap-3">
-                  <svg className="w-6 h-6 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l.707.707M6.343 17.657l-.707-.707m12.728 0l.707-.707M12 21v-1m-4-4H7v4h1v-4zm8 0h1v4h-1v-4z" /></svg>
-                  <div>
-                    <h4 className="font-bold text-green-800">Tips</h4>
-                    <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{activePartData.examinerNotes}</p>
-                  </div>
-                </div>
               </div>
             )}
           </div>
         </div>
 
-        {examType !== 'Writing' && (
-          <div className={`${isSpeakingWideLayout ? 'flex-[3]' : 'flex-1'} bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-6 sm:p-8 custom-scrollbar`}>
+        <div className={`${isSpeakingWideLayout ? 'lg:flex-[3]' : 'flex-1'} bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-4 sm:p-6 custom-scrollbar`}>
           <div className={`${isSpeakingWideLayout ? 'max-w-none' : 'max-w-2xl'} mx-auto`}>
-            {examType !== 'Speaking' && (
+            {examType === 'Writing' && (
+              <div className="mb-8 space-y-6">
+                 {activePartData?.howToApproach && (
+                   <div className="p-4 bg-purple-50 border-l-4 border-purple-400 rounded-r-lg shadow-sm">
+                     <h4 className="font-bold text-purple-800 mb-2 flex items-center gap-2">
+                       <span>🚀</span> How to Approach
+                     </h4>
+                     <div className="text-sm text-purple-800 leading-relaxed whitespace-pre-line">{activePartData.howToApproach}</div>
+                   </div>
+                 )}
+
+                 {activePartData?.tips && (
+                   <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg shadow-sm">
+                     <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                       <span>💡</span> Tips & Strategies
+                     </h4>
+                     <div className="text-sm text-yellow-800 leading-relaxed whitespace-pre-line">{activePartData.tips}</div>
+                   </div>
+                 )}
+
+                 {activePartData?.modelAnswer && (
+                   <div className="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg shadow-sm">
+                     <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                       <span>📝</span> Model Answer
+                     </h4>
+                     <div className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{activePartData.modelAnswer}</div>
+                   </div>
+                 )}
+              </div>
+            )}
+
+            {examType !== 'Speaking' && examType !== 'Writing' && (
               <h3 className="text-lg font-bold mb-4 text-gray-800 bg-gray-100 p-3 rounded border-l-4 border-blue-500">
                 Question {currentQuestion}
               </h3>
             )}
             
-            {activeQuestionData && (
+            {activeQuestionData && examType !== 'Writing' && (
               <div className="space-y-6">
                 <div className={`p-4 bg-gray-50 rounded-lg border border-gray-200 ${isSpeakingPart3 ? 'flex flex-col md:flex-row gap-6' : ''}`}>
                   <div className={isSpeakingPart3 ? 'flex-1' : ''}>
@@ -764,24 +801,23 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-        )}
       </main>
 
-      <footer className="h-20 bg-[#2d2d2d] text-white flex items-center justify-between px-4 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-        <div className="flex items-center gap-4">
+      <footer className="bg-[#2d2d2d] text-white flex flex-col sm:flex-row items-center justify-between px-4 py-2 sm:py-0 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] gap-2 sm:gap-0 h-auto sm:h-20">
+        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-between sm:justify-start">
           <button 
             onClick={() => setCurrentQuestion(q => Math.max(1, q - 1))}
             disabled={currentQuestion === 1}
-            className="px-4 py-2 rounded bg-[#3d3d3d] hover:bg-[#4d4d4d] text-sm font-medium transition-colors text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 rounded bg-[#3d3d3d] hover:bg-[#4d4d4d] text-xs sm:text-sm font-medium transition-colors text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Back
           </button>
           <button 
             onClick={() => toggleFlag(currentQuestion)}
-            className="px-4 py-2 rounded bg-[#3d3d3d] hover:bg-[#4d4d4d] text-sm font-medium transition-colors text-gray-300 hover:text-white flex items-center gap-2"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 rounded bg-[#3d3d3d] hover:bg-[#4d4d4d] text-xs sm:text-sm font-medium transition-colors text-gray-300 hover:text-white flex items-center gap-2"
           >
-            <svg className={`w-4 h-4 ${flagged.has(currentQuestion) ? 'text-yellow-400 fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-2l9-9 4 4-9 9H3zm12.3-12.3l-4-4 1.4-1.4c.4-.4 1-.4 1.4 0l1.2 1.2c.4.4.4 1 0 1.4l-1.4 1.4z" /></svg>
-            Review
+            <svg className={`w-3 h-3 sm:w-4 sm:h-4 ${flagged.has(currentQuestion) ? 'text-yellow-400 fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-2l9-9 4 4-9 9H3zm12.3-12.3l-4-4 1.4-1.4c.4-.4 1-.4 1.4 0l1.2 1.2c.4.4.4 1 0 1.4l-1.4 1.4z" /></svg>
+            <span className="hidden sm:inline">Review</span>
           </button>
           <button 
             onClick={() => {
@@ -794,27 +830,27 @@ export default function DashboardPage() {
                 handleSubmitAnswer();
               }
             }}
-            disabled={(!submittedQuestions.has(currentQuestion) && !answers[currentQuestion] && examType !== 'Speaking') || (submittedQuestions.has(currentQuestion) && currentQuestion === totalQuestions)}
-            className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-sm font-bold transition-colors text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={(!submittedQuestions.has(currentQuestion) && !answers[currentQuestion] && examType !== 'Speaking' && examType !== 'Writing') || (submittedQuestions.has(currentQuestion) && currentQuestion === totalQuestions)}
+            className="px-4 py-1.5 sm:px-6 sm:py-2 rounded bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm font-bold transition-colors text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submittedQuestions.has(currentQuestion) ? 'Next' : (examType === 'Speaking' ? 'Done' : 'Submit')}
+            {submittedQuestions.has(currentQuestion) ? 'Next' : (examType === 'Speaking' || examType === 'Writing' ? 'Done' : 'Submit')}
           </button>
         </div>
         
-        <div className="flex-1 flex items-center justify-center gap-1 overflow-x-auto py-2 no-scrollbar mx-4">
+        <div className="flex-1 flex items-center justify-center gap-1 overflow-x-auto py-2 no-scrollbar mx-2 sm:mx-4 w-full sm:w-auto">
           {Array.from({ length: totalQuestions }, (_, i) => i + 1).map((q) => (
             <button
               key={q}
               onClick={() => setCurrentQuestion(q)}
-              className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-sm text-xs font-bold transition-all relative ${getQuestionNavClass(q)}`}
+              className={`w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center rounded-sm text-[10px] sm:text-xs font-bold transition-all relative ${getQuestionNavClass(q)}`}
             >
-              {flagged.has(q) && <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>}
+              {flagged.has(q) && <div className="absolute top-0.5 right-0.5 w-1 h-1 sm:w-1.5 sm:h-1.5 bg-yellow-400 rounded-full"></div>}
               {q}
             </button>
           ))}
         </div>
         
-        <button className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md transition-colors">
+        <button className="w-full sm:w-auto px-4 py-1.5 sm:px-6 sm:py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md transition-colors">
           Finish Test
         </button>
       </footer>
