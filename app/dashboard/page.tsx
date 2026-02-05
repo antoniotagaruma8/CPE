@@ -12,6 +12,9 @@ interface Question {
   options: string[];
   correctOption: string;
   explanation: string;
+  imagePrompts?: string[];
+  possibleAnswers?: string[];
+  tips?: string;
 }
 
 interface ExamPart {
@@ -89,6 +92,75 @@ const AudioPlayer = ({ text, audioUrl, audioError, examType }: { text: string; a
         </div>
       </div>
     </>
+  );
+};
+
+const AIImage = ({ prompt }: { prompt: string }) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generate = async () => {
+    setLoading(true);
+    setError(null);
+    
+    const result = await generateImageAction(prompt);
+    
+    if (result.success && result.imageUrl) {
+      setImageUrl(result.imageUrl);
+    } else {
+      setError(result.error || 'Failed to generate image');
+    }
+    setLoading(false);
+  };
+
+  const handleImageLoad = () => {
+    setLoading(false);
+  };
+
+  const handleImageError = () => {
+    setLoading(false);
+    setError('Failed to load image. Please try again.');
+    setImageUrl(null);
+  };
+
+  if (imageUrl) {
+    return (
+      <div className="relative group rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white min-h-[250px]">
+        {loading && (
+           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+             <div className="flex flex-col items-center gap-2">
+               <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+               <span className="text-xs text-gray-500 font-medium">Generating with Stable Diffusion...</span>
+             </div>
+           </div>
+        )}
+        <img 
+          src={imageUrl} 
+          alt={prompt} 
+          className={`w-full h-auto object-cover hover:scale-105 transition-transform duration-500 ${loading ? 'opacity-0' : 'opacity-100'}`}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          referrerPolicy="no-referrer"
+        />
+        {!loading && <p className="p-2 text-xs text-gray-500 bg-gray-50 italic border-t border-gray-100">{prompt}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full min-h-[250px] bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center p-6 text-center transition-colors hover:bg-gray-100">
+      <p className="text-sm text-gray-600 mb-4 italic max-w-xs">{prompt}</p>
+      {error && <p className="text-xs text-red-500 mb-3 font-bold">{error}</p>}
+      <button 
+        onClick={generate} 
+        disabled={loading}
+        className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-md hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        Generate Image (Stable Diffusion)
+      </button>
+    </div>
   );
 };
 
@@ -213,6 +285,16 @@ export default function DashboardPage() {
                   : [],
                 correctOption: q.correctOption,
                 explanation: q.explanation,
+                imagePrompts: (Array.isArray(q.imagePrompts) 
+                  ? q.imagePrompts 
+                  : (typeof q.imagePrompts === 'string' ? [q.imagePrompts] : [])
+                ).map((p: any) => {
+                      if (typeof p === 'string') return p;
+                      if (typeof p === 'object' && p !== null) return p.description || p.text || p.prompt || '';
+                      return '';
+                    }).filter((s: string) => s && s.trim().length > 0),
+                possibleAnswers: q.possibleAnswers,
+                tips: q.tips,
               });
             });
           }
@@ -474,6 +556,14 @@ export default function DashboardPage() {
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="font-semibold text-gray-800 mb-4 whitespace-pre-line">{activeQuestionData.question}</div>
                   
+                  {activeQuestionData.imagePrompts && activeQuestionData.imagePrompts.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      {activeQuestionData.imagePrompts.map((prompt, idx) => (
+                        <AIImage key={idx} prompt={prompt} />
+                      ))}
+                    </div>
+                  )}
+                  
                   {activeQuestionData.options && activeQuestionData.options.length > 0 ? (
                     <div className="space-y-3">
                     {activeQuestionData.options.map((opt, index) => {
@@ -559,6 +649,32 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+
+                {(activeQuestionData.tips || (activeQuestionData.possibleAnswers && activeQuestionData.possibleAnswers.length > 0)) && (
+                  <div className="space-y-4 animate-fade-in">
+                    {activeQuestionData.tips && (
+                       <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg shadow-sm">
+                         <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                           <span>💡</span> Tip for this Part
+                         </h4>
+                         <p className="text-sm text-yellow-800 leading-relaxed">{activeQuestionData.tips}</p>
+                       </div>
+                    )}
+                    
+                    {activeQuestionData.possibleAnswers && activeQuestionData.possibleAnswers.length > 0 && (
+                       <div className="p-4 bg-indigo-50 border-l-4 border-indigo-400 rounded-r-lg shadow-sm">
+                         <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                           <span>🗣️</span> Possible Answers / Useful Language
+                         </h4>
+                         <ul className="list-disc list-inside text-sm text-indigo-800 space-y-1">
+                           {activeQuestionData.possibleAnswers.map((ans, idx) => (
+                             <li key={idx} className="leading-relaxed">{ans}</li>
+                           ))}
+                         </ul>
+                       </div>
+                    )}
+                  </div>
+                )}
 
                 {submittedQuestions.has(currentQuestion) && (
                   <div className="mt-6 space-y-4 animate-fade-in">

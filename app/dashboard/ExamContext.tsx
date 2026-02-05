@@ -90,7 +90,12 @@ CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY 
 
 The ${partCount} parts should follow the format of:
 - Part 1 (Interview): Provide 'title', 'instructions', 'content' (interlocutor script). The 'questions' array MUST contain EXACTLY ONE object. The 'question' field of this object MUST contain a list of 8 distinct interview questions separated by newlines. Set 'options' to [].
-- Part 2 (Long turn): Provide 'title', 'instructions', 'content' (describe visual prompts). The 'questions' array MUST contain EXACTLY ONE object with the task prompt. Set 'options' to ["Next"].
+- Part 2 (Long turn): Provide 'title', 'instructions', 'content' (task description). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:
+  - 'question': The task prompt (e.g., "Compare these two pictures...").
+  - 'options': [].
+  - 'imagePrompts': An array of strings (e.g. ["A busy city street", "A quiet park"]). Provide exactly 2 distinct visual descriptions.
+  - 'possibleAnswers': An array of 3-4 example phrases or sentences a candidate could use to answer.
+  - 'tips': A string containing advice on how to approach this specific task (e.g., "Focus on comparing, not just describing...").
 - Part 3 (Collaborative task): Provide 'title', 'instructions', 'content' (context). The 'questions' array MUST contain EXACTLY ONE object with the discussion prompt. Set 'options' to ["Next"].
 
 For Part 2 and 3, set 'correctOption' to "A". For all parts, set 'explanation' to "Focus on fluency and coherence.".
