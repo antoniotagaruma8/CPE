@@ -76,7 +76,7 @@ The ${partCount} parts should follow the Cambridge format. For each part, provid
 
 For the questions:
 - 'question': The sentence with a gap (e.g., "The train departs at ______.").
-- 'options': An empty array [].
+- 'options': An empty array []. Do NOT provide choices.
 - 'correctOption': The correct word or phrase to fill the gap.
 - 'explanation': A brief explanation.
 

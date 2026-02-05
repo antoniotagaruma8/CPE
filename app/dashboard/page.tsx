@@ -45,7 +45,7 @@ const AudioPlayer = ({ text, audioUrl }: { text: string; audioUrl?: string }) =>
     if (playing) {
       window.speechSynthesis.cancel();
       setPlaying(false);
-    } else {
+    } else if (text) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.onend = () => setPlaying(false);
@@ -407,7 +407,7 @@ export default function DashboardPage() {
             {activePartData?.content && (
               <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
                 <h4 className="font-semibold text-slate-600 mb-2 text-sm uppercase tracking-wider">
-                  {examType === 'Listening' ? 'Audio Context' : 'Context'}
+                  {examType === 'Listening' ? 'Audio Track' : 'Context'}
                 </h4>
                 
                 {examType === 'Listening' ? (
