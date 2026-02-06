@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 
 export default function LandingPage() {
   const [showConfig, setShowConfig] = useState(false);
@@ -20,12 +21,11 @@ export default function LandingPage() {
         <div className="flex items-center gap-4">
           <Link href="#" className="text-sm font-medium text-slate-600 hover:text-blue-600">About</Link>
           <Link href="#" className="text-sm font-medium text-slate-600 hover:text-blue-600">Pricing</Link>
-          <button className="text-sm font-semibold text-blue-600 hover:text-blue-700">Log in</button>
           <button 
-            onClick={() => setShowConfig(true)}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            className="text-sm font-semibold text-blue-600 hover:text-blue-700"
           >
-            Get Started
+            Log in
           </button>
         </div>
       </header>
