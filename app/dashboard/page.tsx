@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useExam } from './ExamContext';
 import CliLoader from '../../components/CliLoader';
-import { generateImageAction } from '../actions/generateImageHF';
+import { generateImageAction } from '../actions/generateImage';
 
 interface Question {
   id: number;
@@ -114,7 +114,14 @@ const AIImage = ({ prompt }: { prompt: string }) => {
     if (result.success && result.imageUrl) {
       setImageUrl(result.imageUrl);
     } else {
-      setError(result.error || 'Failed to generate image');
+      let friendlyError = result.error || 'Failed to generate image';
+      // DALL-E specific error handling
+      if (friendlyError.includes('billing') || friendlyError.includes('quota')) {
+        friendlyError = 'OpenAI quota exceeded. Please check your billing details.';
+      } else if (friendlyError.includes('safety system')) {
+        friendlyError = 'The prompt was rejected by the safety system. Please try a different prompt.';
+      }
+      setError(friendlyError);
     }
     setLoading(false);
   };
