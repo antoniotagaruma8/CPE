@@ -1,8 +1,5 @@
-'use client';
-
 import React from 'react';
 import { ExamProvider } from './ExamContext';
-import { SessionProvider } from 'next-auth/react';
 
 export default function DashboardLayout({
   children,
@@ -10,10 +7,8 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <SessionProvider>
-      <ExamProvider>
-        {children}
-      </ExamProvider>
-    </SessionProvider>
+    <ExamProvider>
+      {children}
+    </ExamProvider>
   );
 }
