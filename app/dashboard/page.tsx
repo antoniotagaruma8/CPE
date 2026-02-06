@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import PublicExamDisplay from '../../../components/PublicExamDisplay';
+import PublicExamDisplay from '../../components/PublicExamDisplay';
 
 export default function PublicExamPage({ searchParams }: { searchParams: { data?: string } }) {
   const encodedData = searchParams?.data || '';
