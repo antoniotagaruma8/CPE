@@ -13,14 +13,14 @@ export const authOptions = {
   ],
   secret: process.env.NEXTAUTH_SECRET, // Ito yung random string na ginawa mo sa .env.local
   callbacks: {
-    async session({ session, token, user }) {
-      // Dito mo pwedeng idagdag ang user ID o iba pang info sa session object
-      // na maa-access mo sa frontend.
-      return session
+    async session({ session, token }) {
+      // Add user ID from the provider to the session object
+      if (session.user) {
+        session.user.id = token.sub;
+      }
+      return session;
     },
   },
 }
 
 export default NextAuth(authOptions)
-
-
