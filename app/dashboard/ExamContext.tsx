@@ -76,8 +76,8 @@ This means the final JSON must contain a TOTAL of ${listeningTotal} questions. D
 
 The ${partCount} parts should follow the Cambridge format. For each part, provide:
 - 'title': Title of the section (e.g., "Extract 1", "Interview", "Talk").
-- 'instructions': Instructions for the candidate. Ensure the instruction accurately describes the audio type (e.g., use "You will hear a monologue..." for a single speaker, or "You will hear a conversation..." for multiple speakers).
-- 'content': The AUDIO TRANSCRIPT. This text will be read aloud to the user. Ensure the content matches the description (monologue vs dialogue). Use the format "Speaker: Text" for dialogue (e.g., "Man: Hello", "Woman: Hi").
+- 'instructions': Instructions for the candidate. Use "You will hear a monologue..." or "You will hear a talk...".
+- 'content': The AUDIO TRANSCRIPT. This text will be read aloud to the user. IMPORTANT: Generate ONLY narratives or monologues (single speaker). Do NOT generate conversations or dialogues. Do NOT use speaker labels (e.g. "Man:", "Woman:"). Just provide the text of the speech.
 - 'questions': An array of ${listeningQuestionCount} fill-in-the-blank questions.
 
 For the questions:
