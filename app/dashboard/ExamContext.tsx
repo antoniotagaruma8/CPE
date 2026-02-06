@@ -58,7 +58,7 @@ For each of the ${partCount} parts, provide:
 - 'instructions': Instructions for the candidate.
 - 'content': The input text or prompt details.
 - 'tips': Comprehensive tips and strategies for this specific writing task type (e.g. structure, tone, key language).
-- 'modelAnswer': A comprehensive, high-scoring model answer for this task. It must be detailed, well-structured, and demonstrate advanced vocabulary and grammar appropriate for ${cefrLevel} level. IMPORTANT: Do NOT use Markdown headers (like ##). If the task (especially Part 5) is a Letter or Email, the model answer MUST look like a real letter/email (including opening/closing salutations, date if applicable, and proper layout). For Parts 2-5, ensure the model answer is very comprehensive, clearly separated into paragraphs or sections, and sufficient to pass the exam with a high score. Ensure the answer has a clear structure with a distinct Introduction, Main Body, and Conclusion where applicable. Separate each section (Introduction, Body paragraphs, Conclusion) with a blank line.
+- 'modelAnswer': A comprehensive, high-scoring model answer for this task. It must be detailed, well-structured, and demonstrate advanced vocabulary and grammar appropriate for ${cefrLevel} level. IMPORTANT: Do NOT use Markdown headers (like ##). If the task (especially Part 5) is a Letter or Email, the model answer MUST look like a real letter/email (including opening/closing salutations, date if applicable, and proper layout). For Parts 2-5, ensure the model answer is very comprehensive, clearly separated into paragraphs or sections, and sufficient to pass the exam with a high score. Ensure the answer has a clear structure with a distinct Introduction, Main Body, and Conclusion where applicable. Separate paragraphs with a single empty line.
 - 'howToApproach': A detailed step-by-step guide on how to approach this task (e.g. 1. Analyze the question, 2. Plan your paragraphs...).
 - 'questions': An array containing exactly one object: { "text": "Have you completed this writing task?", "options": ["Yes, task completed"], "correctOption": "A", "explanation": "Writing tasks are assessed on Content, Communicative Achievement, Organisation, and Language." }
 
@@ -75,9 +75,9 @@ Each of these ${partCount} part objects MUST contain an array of EXACTLY ${liste
 This means the final JSON must contain a TOTAL of ${listeningTotal} questions. Do not stop generating early.
 
 The ${partCount} parts should follow the Cambridge format. For each part, provide:
-- 'title': Title of the section.
-- 'instructions': Instructions for the candidate.
-- 'content': The AUDIO TRANSCRIPT. This text will be read aloud to the user.
+- 'title': Title of the section (e.g., "Extract 1", "Interview", "Talk").
+- 'instructions': Instructions for the candidate. Ensure the instruction accurately describes the audio type (e.g., use "You will hear a monologue..." for a single speaker, or "You will hear a conversation..." for multiple speakers).
+- 'content': The AUDIO TRANSCRIPT. This text will be read aloud to the user. Ensure the content matches the description (monologue vs dialogue).
 - 'questions': An array of ${listeningQuestionCount} fill-in-the-blank questions.
 
 For the questions:

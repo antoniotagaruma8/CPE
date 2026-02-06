@@ -263,7 +263,7 @@ export default function DashboardPage() {
             validPartsFound = true;
             const partNumber = index + 1;
             // Clean up title to remove duplicated "Part X:" prefix from AI generation
-            const cleanedTitle = (partData.title || '').replace(/^Part\s*\d+\s*:\s*/i, '').trim();
+            const cleanedTitle = (partData.title || '').replace(/^Part\s*\d+\s*[:.]?\s*/i, '').trim();
             
             allParts.push({
               part: partNumber,
@@ -513,7 +513,7 @@ export default function DashboardPage() {
         <div className={`${isSpeakingWideLayout ? 'lg:flex-[1]' : 'flex-1'} bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto p-4 sm:p-6 custom-scrollbar`}>
           <div className="max-w-2xl mx-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-3">
-              Part {activePartData?.part}: {activePartData?.title}
+              Part {activePartData?.part}{activePartData?.title ? `: ${activePartData.title}` : ''}
             </h2>
             <div className="prose prose-slate max-w-none text-gray-800 leading-relaxed">
               {(activePartData?.instructions || '').split('\n').filter(line => line.trim()).map((line, index) => (
@@ -584,7 +584,7 @@ export default function DashboardPage() {
                      <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
                        <span>📝</span> Model Answer
                      </h4>
-                     <div className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{activePartData.modelAnswer}</div>
+                     <div className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{(activePartData.modelAnswer || '').replace(/\n{3,}/g, '\n\n')}</div>
                    </div>
                  )}
               </div>
