@@ -1,13 +1,9 @@
 "use client";
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 
 export default function LandingPage() {
-  const [showConfig, setShowConfig] = useState(false);
-  const [level, setLevel] = useState('');
-
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900">
       {/* Top Bar */}
@@ -41,10 +37,10 @@ export default function LandingPage() {
           </p>
           <div className="mt-10">
             <button 
-              onClick={() => setShowConfig(true)}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="px-8 py-4 rounded-lg bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-transform hover:scale-105 shadow-lg"
             >
-              Start a Free Simulation
+              Get Started
             </button>
           </div>
         </div>
@@ -88,56 +84,6 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* Configuration Modal */}
-      {showConfig && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
-            <h2 className="text-2xl font-bold mb-2 text-slate-900">Configure Exam</h2>
-            <p className="text-slate-500 mb-6">Select your target proficiency level to generate a simulation.</p>
-            
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-3">Select Level</label>
-                <div className="grid grid-cols-1 gap-3">
-                  {['B2 First', 'C1 Advanced', 'C2 Proficiency'].map((l) => (
-                    <button
-                      key={l}
-                      onClick={() => setLevel(l)}
-                      className={`py-3 px-4 rounded-lg border text-left text-sm font-semibold transition-all flex items-center justify-between ${
-                        level === l 
-                          ? 'bg-blue-50 border-blue-600 text-blue-700 ring-1 ring-blue-600' 
-                          : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:bg-slate-50'
-                      }`}
-                    >
-                      {l}
-                      {level === l && (
-                        <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setShowConfig(false)}
-                className="flex-1 py-3 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <Link 
-                href="/dashboard"
-                className={`flex-1 py-3 rounded-lg bg-blue-600 text-white font-semibold flex items-center justify-center hover:bg-blue-700 transition-colors shadow-sm ${!level ? 'opacity-50 pointer-events-none' : ''}`}
-              >
-                Generate Exam
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
