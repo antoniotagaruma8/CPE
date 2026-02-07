@@ -803,7 +803,7 @@ export default function DashboardPage() {
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l.707.707M6.343 17.657l-.707-.707m12.728 0l.707-.707M12 21v-1m-4-4H7v4h1v-4zm8 0h1v4h-1v-4z" /></svg>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800">Create Your Custom Exam (Updated)</h3>
+                <h3 className="text-lg font-bold text-slate-800">Create Your Custom Cambridge Exam</h3>
                 <p className="text-sm text-slate-500">Fill out the details below to generate a new exam paper.</p>
               </div>
             </div>
