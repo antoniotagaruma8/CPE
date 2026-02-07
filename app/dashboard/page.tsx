@@ -8,6 +8,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { saveExam, getSavedExams, deleteSavedExam } from '../actions/examActions';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
 
 interface Question {
   id: number;
@@ -39,6 +40,12 @@ interface ExamPart {
 const AudioPlayer = ({ text, audioUrl, audioError, examType }: { text: string; audioUrl?: string, audioError?: string, examType: string }) => {
   const [playing, setPlaying] = useState(false);
 
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
   if (audioUrl) {
     return (
       <div className="w-full p-4 bg-blue-50 rounded-lg border border-blue-100 mb-4">
@@ -60,12 +67,6 @@ const AudioPlayer = ({ text, audioUrl, audioError, examType }: { text: string; a
     </div>
   );
 
-
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
 
   const togglePlay = () => {
     if (playing) {
@@ -249,7 +250,14 @@ export default function DashboardPage() {
     const STORAGE_KEY = 'cpe_exam_data_backup';
 
     if (activeExamData) {
-      localStorage.setItem(STORAGE_KEY, activeExamData);
+      // Save with metadata to persist state on refresh
+      const dataToSave = {
+        content: activeExamData,
+        type: examType,
+        level: cefrLevel,
+        topic: topic
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     } else if (typeof window !== 'undefined') {
       // Only try to load if we don't have a new one coming in
       const cached = localStorage.getItem(STORAGE_KEY);
@@ -277,9 +285,17 @@ export default function DashboardPage() {
         let processedData = rawData;
 
         // Handle wrapper object from saved exams (contains answers and score)
-        if (processedData && typeof processedData === 'object' && processedData.content && processedData.answers) {
+        if (processedData && typeof processedData === 'object' && processedData.content) {
            // Restore answers if available
-           setAnswers(processedData.answers);
+           if (processedData.answers) setAnswers(processedData.answers);
+           
+           // Restore metadata if available and not currently generating a new exam
+           if (!generatedExam) {
+             if (processedData.type) setExamType(processedData.type);
+             if (processedData.level) setCefrLevel(processedData.level);
+             if (processedData.topic) setTopic(processedData.topic);
+           }
+
            // Use the inner content for exam generation
            processedData = typeof processedData.content === 'string' ? JSON.parse(processedData.content) : processedData.content;
         }
@@ -336,7 +352,10 @@ export default function DashboardPage() {
             validPartsFound = true;
             const partNumber = index + 1;
             // Clean up title to remove duplicated "Part X:" prefix from AI generation
-            const cleanedTitle = (partData.title || '').replace(/^Part\s*\d+\s*[:.]?\s*/i, '').trim();
+            const cleanedTitle = (partData.title || '')
+              .replace(/^Part\s*\d+\s*[:.]?\s*/i, '')
+              .replace(/^Extract\s*\d+\s*[:.]?\s*/i, '')
+              .trim();
             
             allParts.push({
               part: partNumber,
@@ -441,7 +460,10 @@ export default function DashboardPage() {
           score: correctCount,
           totalQuestions: totalQ,
           isFinished: isFinished,
-          savedAt: new Date().toISOString()
+          savedAt: new Date().toISOString(),
+          type: examType,
+          level: cefrLevel,
+          topic: topic
       };
 
       const newExam = {
@@ -450,10 +472,37 @@ export default function DashboardPage() {
         topic: topic,
         data: JSON.stringify(examDataToSave)
       };
-      const saved = await saveExam(newExam, session.user.email);
+
+      let saved;
+      try {
+        saved = await saveExam(newExam, session.user.email);
+      } catch (error) {
+        console.warn('Server action failed, attempting client-side save:', error);
+        // Fallback to client-side insert if server action fails (e.g. payload too large)
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        const { data, error: clientError } = await supabase
+          .from('exams')
+          .insert([
+            {
+              user_email: session.user.email,
+              type: newExam.type,
+              level: newExam.level,
+              topic: newExam.topic,
+              data: newExam.data,
+            },
+          ])
+          .select()
+          .single();
+          
+        if (clientError) throw clientError;
+        saved = data;
+      }
+
       if (saved) {
         setSavedExamsList(prev => [saved, ...prev]);
-        alert('Exam saved successfully!');
       }
     } catch (err) {
       console.error('Failed to save exam:', err);
@@ -475,12 +524,33 @@ export default function DashboardPage() {
     if (confirm(`Load "${exam.topic}" exam? This will overwrite any current active exam.`)) {
         // Check if data is JSON and has content/answers wrapper
         try {
-            const parsed = JSON.parse(exam.data);
-            // If it's the new format, save as is (useEffect handles unwrapping)
-            // If it's old format (string), save as is
-            localStorage.setItem('cpe_exam_data_backup', exam.data);
+            let parsed = JSON.parse(exam.data);
+            
+            // Ensure metadata is present in the stored object
+            if (!parsed.type) parsed.type = exam.type;
+            if (!parsed.level) parsed.level = exam.level;
+            if (!parsed.topic) parsed.topic = exam.topic;
+            
+            // If it's a raw content object (old format), wrap it
+            if (!parsed.content) {
+                parsed = {
+                    content: exam.data,
+                    type: exam.type,
+                    level: exam.level,
+                    topic: exam.topic,
+                    answers: {}
+                };
+            }
+            
+            localStorage.setItem('cpe_exam_data_backup', JSON.stringify(parsed));
         } catch (e) {
-            localStorage.setItem('cpe_exam_data_backup', exam.data);
+            // Fallback for non-JSON data
+            localStorage.setItem('cpe_exam_data_backup', JSON.stringify({
+                content: exam.data,
+                type: exam.type,
+                level: exam.level,
+                topic: exam.topic
+            }));
         }
         window.location.reload();
     }

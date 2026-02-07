@@ -99,7 +99,7 @@ The ${partCount} parts should follow the format of:
   - 'question': "Interview Questions".
   - 'options': [].
   - 'tips': A general strategy on how to address and approach Part 1 (e.g. "Give full answers, but don't dominate...").
-  - 'part1Questions': An array of 8 objects, each containing:
+  - 'part1Questions': An array of 8 objects. CRITICAL: Questions 1-5 MUST be strictly personal questions (e.g. "Where are you from?", "What do you do here?", "How long have you been studying English?", "What do you enjoy doing in your free time?") exactly as in the standard Cambridge exam format. Questions 6-8 should be related to the specific topic "${topic}". Each object must contain:
     - 'question': The interview question text.
     - 'answer': A comprehensive, high-scoring sample answer (2-3 sentences) demonstrating advanced vocabulary.
     - 'tip': A specific tip for this question.
