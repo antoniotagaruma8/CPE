@@ -740,8 +740,23 @@ export default function DashboardPage() {
   // Check if we have questions (either from context or restored from storage)
   if (examQuestions.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 p-4 font-sans flex items-center justify-center">
-        <div className="max-w-[1600px] mx-auto w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
+        <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex justify-between items-center shadow-sm sticky top-0 z-20">
+          <h1 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+            <svg className="w-8 h-8 text-blue-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg> Cambridge Exam Practice
+          </h1>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-600 hidden sm:block">Welcome, <span className="font-bold text-slate-900">{session?.user?.name || session?.user?.email?.split('@')[0]}</span></span>
+            <button onClick={() => signOut({ callbackUrl: '/' })} className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-red-600 hover:border-red-200 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Sign Out
+            </button>
+          </div>
+        </header>
+        <div className="flex-1 p-4 flex items-center justify-center">
+          <div className="max-w-[1600px] mx-auto w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
           
           {/* Saved Exams Column (1/4) */}
           <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg h-fit max-h-[80vh] overflow-y-auto custom-scrollbar border border-slate-100 sticky top-4">
@@ -848,6 +863,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
+        </div>
         </div>
       </div>
     );
