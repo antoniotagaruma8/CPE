@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useExam } from './ExamContext';
 import CliLoader from '../../components/CliLoader';
 import { generateImageAction } from '../actions/generateImageHF';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { saveExam, getSavedExams, deleteSavedExam } from '../actions/examActions';
+import Link from 'next/link';
 
 interface Question {
   id: number;
@@ -204,23 +206,48 @@ export default function DashboardPage() {
   const [revealedAnswers, setRevealedAnswers] = useState<Set<number>>(new Set());
   const [localError, setLocalError] = useState('');
   const [isLoaderVisible, setIsLoaderVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedExamsList, setSavedExamsList] = useState<any[]>([]);
 
   useEffect(() => {
-    if (generatedExam) {
+    // Persistence logic: Use generatedExam from context, or fallback to localStorage
+    let activeExamData = generatedExam;
+    const STORAGE_KEY = 'cpe_exam_data_backup';
+
+    if (activeExamData) {
+      localStorage.setItem(STORAGE_KEY, activeExamData);
+    } else if (typeof window !== 'undefined') {
+      // Only try to load if we don't have a new one coming in
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        activeExamData = cached;
+      }
+    }
+
+    if (activeExamData) {
       // Reset all exam-specific state when a new exam is generated
-      setCurrentQuestion(1);
-      setAnswers({});
-      setFlagged(new Set());
-      setSubmittedQuestions(new Set());
-      setRevealedAnswers(new Set());
-      setLocalError('');
-      // Optional: Reset timer as well
-      // setTimeLeft(90 * 60);
+      // Note: On a refresh, these are already at default, so resetting is fine.
+      if (generatedExam) {
+        setCurrentQuestion(1);
+        setAnswers({});
+        setFlagged(new Set());
+        setSubmittedQuestions(new Set());
+        setRevealedAnswers(new Set());
+        setLocalError('');
+      }
 
       try {
-        const rawData = JSON.parse(generatedExam);
+        const rawData = JSON.parse(activeExamData);
         let data: any;
         let processedData = rawData;
+
+        // Handle wrapper object from saved exams (contains answers and score)
+        if (processedData && typeof processedData === 'object' && processedData.content && processedData.answers) {
+           // Restore answers if available
+           setAnswers(processedData.answers);
+           // Use the inner content for exam generation
+           processedData = typeof processedData.content === 'string' ? JSON.parse(processedData.content) : processedData.content;
+        }
 
         // Drill down if we have a single-key object wrapper like {"Writing": ...} or similar
         if (processedData && typeof processedData === 'object' && !Array.isArray(processedData) && Object.keys(processedData).length === 1) {
@@ -343,6 +370,99 @@ export default function DashboardPage() {
     }
   }, [generatedExam]);
 
+  useEffect(() => {
+    if (session?.user?.email) {
+      getSavedExams(session.user.email).then((data) => {
+        if (data) setSavedExamsList(data);
+      });
+    }
+  }, [session]);
+
+  const handleSaveExam = async () => {
+    if (!generatedExam) return;
+    setIsSaving(true);
+
+    try {
+      if (!session?.user?.email) {
+        alert("Please sign in to save exams.");
+        return;
+      }
+
+      // Calculate score and status
+      const totalQ = examQuestions.length;
+      const answeredQ = Object.keys(answers).length;
+      let correctCount = 0;
+      examQuestions.forEach(q => {
+          if (answers[q.id] === q.correctOption) {
+              correctCount++;
+          }
+      });
+      const isFinished = totalQ > 0 && answeredQ === totalQ;
+
+      const examDataToSave = {
+          content: generatedExam,
+          answers: answers,
+          score: correctCount,
+          totalQuestions: totalQ,
+          isFinished: isFinished,
+          savedAt: new Date().toISOString()
+      };
+
+      const newExam = {
+        type: examType,
+        level: cefrLevel,
+        topic: topic,
+        data: JSON.stringify(examDataToSave)
+      };
+      const saved = await saveExam(newExam, session.user.email);
+      if (saved) {
+        setSavedExamsList(prev => [saved, ...prev]);
+        alert('Exam saved successfully to Supabase!');
+      }
+    } catch (err) {
+      console.error('Failed to save exam:', err);
+      alert('Failed to save exam.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleFinishTest = () => {
+    // Clear local state and storage to allow generating a new exam
+    setExamParts([]);
+    setExamQuestions([]);
+    localStorage.removeItem('cpe_exam_data_backup');
+    window.location.reload();
+  };
+
+  const handleLoadSavedExam = (exam: any) => {
+    if (confirm(`Load "${exam.topic}" exam? This will overwrite any current active exam.`)) {
+        // Check if data is JSON and has content/answers wrapper
+        try {
+            const parsed = JSON.parse(exam.data);
+            // If it's the new format, save as is (useEffect handles unwrapping)
+            // If it's old format (string), save as is
+            localStorage.setItem('cpe_exam_data_backup', exam.data);
+        } catch (e) {
+            localStorage.setItem('cpe_exam_data_backup', exam.data);
+        }
+        window.location.reload();
+    }
+  };
+
+  const handleDeleteSavedExam = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Delete this saved exam?')) {
+      try {
+        await deleteSavedExam(id);
+        setSavedExamsList(prev => prev.filter(e => e.id !== id));
+      } catch (error) {
+        console.error("Failed to delete exam", error);
+        alert("Failed to delete exam");
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     generateExam();
@@ -407,6 +527,59 @@ export default function DashboardPage() {
     }
   }, [loading, isProcessing]);
 
+  // Calculate progress stats from saved exams
+  const progressStats = useMemo(() => {
+    const stats = {
+        Reading: { correct: 0, total: 0 },
+        Writing: { correct: 0, total: 0 },
+        Listening: { correct: 0, total: 0 },
+        Speaking: { correct: 0, total: 0 }
+    };
+
+    savedExamsList.forEach(exam => {
+        try {
+            const data = JSON.parse(exam.data);
+            // Only include finished exams
+            if (data.isFinished && typeof data.score === 'number' && typeof data.totalQuestions === 'number') {
+                const type = exam.type as keyof typeof stats;
+                if (stats[type]) {
+                    stats[type].correct += data.score;
+                    stats[type].total += data.totalQuestions;
+                }
+            }
+        } catch (e) {
+            // Ignore malformed data or old format without score
+        }
+    });
+
+    return Object.entries(stats).map(([name, { correct, total }]) => ({
+        name: name === 'Reading' ? 'Reading & Use of English' : name,
+        progress: total > 0 ? Math.round((correct / total) * 100) : 0,
+        color: name === 'Reading' ? 'bg-blue-500' : name === 'Writing' ? 'bg-purple-500' : name === 'Listening' ? 'bg-green-500' : 'bg-yellow-500'
+    }));
+  }, [savedExamsList]);
+
+  // Check if the current exam is already saved
+  const isCurrentExamSaved = useMemo(() => {
+    if (!generatedExam) return false;
+    
+    return savedExamsList.some(saved => {
+      try {
+        const savedData = JSON.parse(saved.data);
+        // Check if content matches
+        if (savedData.content !== generatedExam) return false;
+        
+        // Check if answers match
+        const savedAnswers = savedData.answers || {};
+        const currentAnswers = answers || {};
+        
+        return JSON.stringify(savedAnswers) === JSON.stringify(currentAnswers);
+      } catch (e) {
+        return false;
+      }
+    });
+  }, [generatedExam, answers, savedExamsList]);
+
   if (status === 'loading') {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
@@ -433,48 +606,117 @@ export default function DashboardPage() {
     );
   }
 
-  if (!generatedExam || examQuestions.length === 0) {
+  // Check if we have questions (either from context or restored from storage)
+  if (examQuestions.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-3xl mx-auto w-full">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l.707.707M6.343 17.657l-.707-.707m12.728 0l.707-.707M12 21v-1m-4-4H7v4h1v-4zm8 0h1v4h-1v-4z" /></svg>
+      <div className="min-h-screen bg-slate-50 p-4 font-sans flex items-center justify-center">
+        <div className="max-w-[1600px] mx-auto w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+          
+          {/* Saved Exams Column (1/4) */}
+          <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg h-fit max-h-[80vh] overflow-y-auto custom-scrollbar border border-slate-100 sticky top-4">
+            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+              Saved Exams
+            </h3>
+            
+            {savedExamsList.length === 0 ? (
+              <p className="text-sm text-slate-500 italic">No saved exams found.</p>
+            ) : (
+              <div className="space-y-3">
+                {savedExamsList.map((exam) => (
+                  <div 
+                    key={exam.id} 
+                    onClick={() => handleLoadSavedExam(exam)}
+                    className="group p-3 rounded-md border border-slate-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all relative bg-slate-50/50"
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-wider">{exam.level}</span>
+                      <button 
+                        onClick={(e) => handleDeleteSavedExam(exam.id, e)}
+                        className="text-slate-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                        title="Delete"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                    <h4 className="font-bold text-slate-800 text-sm line-clamp-2 mb-1 group-hover:text-blue-700 leading-tight">{exam.topic || 'Untitled Exam'}</h4>
+                    <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2">
+                       <span className="uppercase tracking-wide">{exam.type}</span>
+                       <span>{new Date(exam.created_at || exam.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Generator Column (2/4) */}
+          <div className="lg:col-span-2 bg-white p-8 rounded-lg shadow-lg w-full border border-slate-100">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l.707.707M6.343 17.657l-.707-.707m12.728 0l.707-.707M12 21v-1m-4-4H7v4h1v-4zm8 0h1v4h-1v-4z" /></svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Create Your Custom Exam (Updated)</h3>
+                <p className="text-sm text-slate-500">Fill out the details below to generate a new exam paper.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">Create Your Custom Exam (Updated)</h3>
-              <p className="text-sm text-slate-500">Fill out the details below to generate a new exam paper.</p>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="examType" className="block text-sm font-bold text-slate-600 mb-2">Exam Skill</label>
+                <select id="examType" value={examType} onChange={(e) => setExamType(e.target.value)} className="w-full rounded-lg border-slate-300 border p-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50 transition">
+                  <option value="Reading">Reading & Use of English</option>
+                  <option value="Writing">Writing</option>
+                  <option value="Listening">Listening</option>
+                  <option value="Speaking">Speaking</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="cefrLevel" className="block text-sm font-bold text-slate-600 mb-2">CEFR Level</label>
+                <select id="cefrLevel" value={cefrLevel} onChange={(e) => setCefrLevel(e.target.value)} className="w-full rounded-lg border-slate-300 border p-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50 transition">
+                  <option value="A1">A1 Beginner</option>
+                  <option value="A2">A2 Elementary</option>
+                  <option value="B1">B1 Intermediate</option>
+                  <option value="B2">B2 Upper Intermediate</option>
+                  <option value="C1">C1 Advanced</option>
+                  <option value="C2">C2 Proficiency</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="topic" className="block text-sm font-bold text-slate-600 mb-2">Topic / Theme</label>
+                <input type="text" id="topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., Technology, Climate Change..." className="w-full rounded-lg border-slate-300 border p-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50 transition" required />
+              </div>
+              <button type="submit" disabled={loading} className={`w-full py-3 px-4 rounded-lg text-white font-bold shadow-sm transition-all ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'}`}>
+                {loading ? 'Generating...' : 'Generate Exam'}
+              </button>
+            </form>
+          </div>
+
+          {/* Progress Tracking Column (1/4) */}
+          <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg h-fit border border-slate-100 sticky top-4">
+            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+              Progress Tracking
+            </h3>
+            <div className="space-y-4">
+              {progressStats.map((skill) => (
+                <div key={skill.name}>
+                  <div className="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                    <span>{skill.name}</span>
+                    <span>{skill.progress}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                    <div className={`${skill.color} h-2.5 rounded-full transition-all duration-1000`} style={{ width: `${skill.progress}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 p-4 bg-blue-50 rounded border border-blue-100 text-xs text-blue-800">
+              <p className="font-bold mb-1">Weekly Goal</p>
+              <p>Complete 3 more exams to reach your weekly target!</p>
             </div>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="examType" className="block text-sm font-bold text-slate-600 mb-2">Exam Skill</label>
-              <select id="examType" value={examType} onChange={(e) => setExamType(e.target.value)} className="w-full rounded-lg border-slate-300 border p-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50 transition">
-                <option value="Reading">Reading & Use of English</option>
-                <option value="Writing">Writing</option>
-                <option value="Listening">Listening</option>
-                <option value="Speaking">Speaking</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="cefrLevel" className="block text-sm font-bold text-slate-600 mb-2">CEFR Level</label>
-              <select id="cefrLevel" value={cefrLevel} onChange={(e) => setCefrLevel(e.target.value)} className="w-full rounded-lg border-slate-300 border p-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50 transition">
-                <option value="A1">A1 Beginner</option>
-                <option value="A2">A2 Elementary</option>
-                <option value="B1">B1 Intermediate</option>
-                <option value="B2">B2 Upper Intermediate</option>
-                <option value="C1">C1 Advanced</option>
-                <option value="C2">C2 Proficiency</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="topic" className="block text-sm font-bold text-slate-600 mb-2">Topic / Theme</label>
-              <input type="text" id="topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., Technology, Climate Change..." className="w-full rounded-lg border-slate-300 border p-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50 transition" required />
-            </div>
-            <button type="submit" disabled={loading} className={`w-full py-3 px-4 rounded-lg text-white font-bold shadow-sm transition-all ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'}`}>
-              {loading ? 'Generating...' : 'Generate Exam'}
-            </button>
-          </form>
+
         </div>
       </div>
     );
@@ -864,9 +1106,21 @@ export default function DashboardPage() {
           ))}
         </div>
         
-        <button className="w-full sm:w-auto px-4 py-1.5 sm:px-6 sm:py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md transition-colors">
-          Finish Test
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button 
+            onClick={handleSaveExam}
+            disabled={isSaving || isCurrentExamSaved}
+            className={`w-full sm:w-auto px-4 py-1.5 sm:px-6 sm:py-2 rounded text-white text-xs sm:text-sm font-bold shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isCurrentExamSaved ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'}`}
+          >
+            {isSaving ? 'Saving...' : (isCurrentExamSaved ? 'Saved' : 'Save Exam')}
+          </button>
+          <button 
+            onClick={handleFinishTest}
+            className="w-full sm:w-auto px-4 py-1.5 sm:px-6 sm:py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md transition-colors"
+          >
+            Finish Test
+          </button>
+        </div>
       </footer>
     </div>
   );
