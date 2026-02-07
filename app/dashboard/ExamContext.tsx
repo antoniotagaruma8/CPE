@@ -106,7 +106,7 @@ The ${partCount} parts should follow the format of:
 - Part 2 (Long turn): Provide 'title', 'instructions', 'content' (task description). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:
   - 'question': The task prompt (e.g., "Compare these two pictures...").
   - 'options': [].
-  - 'imagePrompts': An array of strings (e.g. ["A busy city street", "A quiet park"]). Provide exactly 2 distinct visual descriptions.
+  - 'imagePrompts': An array of strings (e.g. ["busy city street", "quiet park"]). Provide exactly 2 distinct, concise search queries for stock photos.
   - 'possibleAnswers': An array of 3-4 comprehensive, high-scoring example sentences or short paragraphs a candidate could use to answer, demonstrating advanced vocabulary and grammar structures suitable for ${cefrLevel}.
   - 'tips': A detailed string containing advice on how to approach this specific task, including what to focus on (comparing, speculating, contrasting) and what to avoid.
 - Part 3 (Collaborative task): Provide 'title', 'instructions', 'content' (context). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:

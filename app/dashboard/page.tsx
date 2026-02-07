@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useExam } from './ExamContext';
 import CliLoader from '../../components/CliLoader';
-import { generateImageAction } from '../actions/generateImageHF';
+import { fetchStockImageAction } from '../actions/fetchStockImage';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { saveExam, getSavedExams, deleteSavedExam } from '../actions/examActions';
@@ -107,22 +107,33 @@ const AudioPlayer = ({ text, audioUrl, audioError, examType }: { text: string; a
 
 const AIImage = ({ prompt }: { prompt: string }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const generate = async () => {
     setLoading(true);
     setError(null);
     
-    const result = await generateImageAction(prompt);
-    
-    if (result.success && result.imageUrl) {
-      setImageUrl(result.imageUrl);
-    } else {
-      setError(result.error || 'Failed to generate image');
+    try {
+      const result = await fetchStockImageAction(prompt);
+      
+      if (result.success && result.imageUrl) {
+        setImageUrl(result.imageUrl);
+        // Keep loading true to allow image to load in background via onLoad
+      } else {
+        setError(result.error || 'Failed to generate image');
+        setLoading(false);
+      }
+    } catch (e) {
+      setError('An unexpected error occurred');
+      setLoading(false);
     }
-    setLoading(false);
   };
+
+  useEffect(() => {
+    generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prompt]);
 
   const handleImageLoad = () => {
     setLoading(false);
@@ -141,7 +152,7 @@ const AIImage = ({ prompt }: { prompt: string }) => {
            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
              <div className="flex flex-col items-center gap-2">
                <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-               <span className="text-xs text-gray-500 font-medium">Generating Image...</span>
+               <span className="text-xs text-gray-500 font-medium">Loading Photo...</span>
              </div>
            </div>
         )}
@@ -158,6 +169,17 @@ const AIImage = ({ prompt }: { prompt: string }) => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="w-full min-h-[250px] bg-gray-50 rounded-lg border border-gray-200 shadow-sm flex items-center justify-center">
+           <div className="flex flex-col items-center gap-2">
+             <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+             <span className="text-xs text-gray-500 font-medium">Loading Photo...</span>
+           </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full min-h-[250px] bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center p-6 text-center transition-colors hover:bg-gray-100">
       <p className="text-sm text-gray-600 mb-4 italic max-w-xs">{prompt}</p>
@@ -168,7 +190,7 @@ const AIImage = ({ prompt }: { prompt: string }) => {
         className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-md hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-        Generate Image
+        {error ? 'Retry Load Photo' : 'Load Stock Photo'}
       </button>
     </div>
   );
@@ -476,6 +498,7 @@ export default function DashboardPage() {
       let saved;
       try {
         saved = await saveExam(newExam, session.user.email);
+        if (!saved) throw new Error("Server save returned no result");
       } catch (error) {
         console.warn('Server action failed, attempting client-side save:', error);
         // Fallback to client-side insert if server action fails (e.g. payload too large)
@@ -503,6 +526,8 @@ export default function DashboardPage() {
 
       if (saved) {
         setSavedExamsList(prev => [saved, ...prev]);
+      } else {
+        throw new Error("Failed to save exam");
       }
     } catch (err) {
       console.error('Failed to save exam:', err);
