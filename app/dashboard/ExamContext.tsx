@@ -129,6 +129,7 @@ CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY 
 
 The ${partCount} parts must be varied and follow the Cambridge exam format (e.g., Multiple-choice cloze, Open cloze, Word formation, Multiple choice).
 For each of the ${partCount} parts, provide: 'title', 'instructions', 'content' (the reading text), and a 'questions' array with an appropriate number of questions for that part type (around ${readingQuestionCount} each).
+CRITICAL: Ensure that the 'content' (reading text) for each part is a DIFFERENT paragraph or text. Do not reuse the same text for multiple parts.
 ${baseJsonInstructions} ${mcInstructions}
 Before finishing, double-check that you have generated exactly ${partCount} parts and a total number of questions close to ${readingTotal}.`;
           break;
