@@ -12,6 +12,10 @@ interface ExamContextType {
   setCefrLevel: (level: string) => void;
   topic: string;
   setTopic: (topic: string) => void;
+  examFor: string;
+  setExamFor: (examFor: string) => void;
+  file: File | null;
+  setFile: (file: File | null) => void;
   generatedExam: string;
   loading: boolean;
   error: string;
@@ -24,13 +28,15 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
   const [examType, setExamType] = useState('Reading');
   const [cefrLevel, setCefrLevel] = useState('C1');
   const [topic, setTopic] = useState('');
+  const [examFor, setExamFor] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [generatedExam, setGeneratedExam] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const generateExam = async () => {
-    if (!topic) {
-      setError('Please enter a topic to generate an exam.');
+    if (!topic && !file) {
+      setError('Please enter a topic or upload a file to generate an exam.');
       return;
     }
     setLoading(true);
@@ -38,18 +44,41 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     setGeneratedExam('');
 
     try {
+      let fileData: string | undefined;
+      if (file) {
+        try {
+          fileData = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+          });
+        } catch (err) {
+          setError('Failed to read the file.');
+          setLoading(false);
+          return;
+        }
+      }
+
       let enhancedTopic = '';
       let partCount = 5;
-      const baseJsonInstructions = "Output must be a valid JSON array of objects. Do not wrap the output in markdown code blocks. Ensure strict JSON syntax. Escape all double quotes within strings. Do not use string concatenation (e.g. '...' + '...') in JSON values. The 'content' field must be a single string.";
+      const baseJsonInstructions = "Output must be a valid JSON object. Do not wrap the output in markdown code blocks. Ensure strict JSON syntax. Escape all double quotes within strings. Do not use string concatenation (e.g. '...' + '...') in JSON values. The 'content' field must be a single string.";
       const mcInstructions = "For EVERY question, including those for 'open cloze', 'gapped text', or 'word formation' parts, you MUST generate a multiple-choice question with 4 distinct options (A, B, C, D). One option must be the correct answer. Provide the correct option letter in the 'correctOption' field (e.g., 'A'). Do NOT include the option letter (e.g. 'A)') in the option text. Also provide an 'explanation' field: a quick 1-sentence logical rationale for the correct answer. For each part, provide an 'examinerNotes' field: a precise 1-sentence tip on methods/techniques for that specific question type. For cloze or fill-in-the-blank parts: 1. The 'content' field MUST be the full, original reading text WITHOUT any gaps. Do NOT put the gapped text here. 2. The 'question' field in the 'questions' array MUST contain the sentence with the gap (e.g., 'The cat sat on the ________.'). Do NOT include the question number (e.g. (1)) in the gap. Do not use Markdown or HTML tags.";
+
+      const topicPrompt = topic 
+        ? (file ? `topic "${topic}" and the uploaded file content` : `topic "${topic}"`) 
+        : `uploaded file content`;
 
       switch (examType) {
         case 'Writing':
           partCount = 5; // C1/C2 has 2 parts, but we generate more for practice variety.
-          enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Writing exam.
-CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} distinct writing task objects. Do not stop generating early.
+          enhancedTopic = `Based on the ${topicPrompt}, generate a complete Cambridge ${cefrLevel} Writing exam.
+CRITICAL REQUIREMENT: The output MUST be a JSON object containing:
+1. "examTitle": A short, descriptive title for the exam based on the content (max 10 words).
+2. "parts": An array containing EXACTLY ${partCount} distinct writing task objects.
+Do not stop generating early.
 
-The ${partCount} tasks should follow the format of:
+The "parts" array should follow the format of:
 - Part 1: Compulsory Essay (summarizing and evaluating two input texts). For this part, put the two input texts in the 'content' field, separated by the string "---SPLIT---".
 - Parts 2-${partCount}: A choice of different task types (e.g., Report, Review, Proposal, Letter). Ensure these are distinct types.
 
@@ -69,12 +98,14 @@ Before finishing, double-check that you have generated exactly ${partCount} writ
           partCount = 4;
           const listeningQuestionCount = 6; // C1 has 6 questions per part.
           const listeningTotal = partCount * listeningQuestionCount;
-          enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Listening exam.
-CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects.
+          enhancedTopic = `Based on the ${topicPrompt}, generate a complete Cambridge ${cefrLevel} Listening exam.
+CRITICAL REQUIREMENT: The output MUST be a JSON object containing:
+1. "examTitle": A short, descriptive title for the exam based on the content (max 10 words).
+2. "parts": An array containing EXACTLY ${partCount} part objects.
 Each of these ${partCount} part objects MUST contain an array of EXACTLY ${listeningQuestionCount} question objects.
 This means the final JSON must contain a TOTAL of ${listeningTotal} questions. Do not stop generating early.
 
-The ${partCount} parts should follow the Cambridge format. For each part, provide:
+The "parts" array should follow the Cambridge format. For each part, provide:
 - 'title': Title of the section (e.g., "Extract 1", "Interview", "Talk").
 - 'instructions': Instructions for the candidate. Use "You will hear a monologue..." or "You will hear a talk...".
 - 'content': The AUDIO TRANSCRIPT. This text will be read aloud to the user. IMPORTANT: Generate ONLY narratives or monologues (single speaker). Do NOT generate conversations or dialogues. Do NOT use speaker labels (e.g. "Man:", "Woman:"). Just provide the text of the speech.
@@ -91,26 +122,29 @@ Before finishing, double-check that you have generated exactly ${partCount} part
           break;
         case 'Speaking':
           partCount = 3;
-          enhancedTopic = `Based on the topic "${topic}", generate a complete Cambridge ${cefrLevel} Speaking exam.
-CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} part objects.
+          enhancedTopic = `Based on the ${topicPrompt}, generate a complete Cambridge ${cefrLevel} Speaking exam.
+CRITICAL REQUIREMENT: The output MUST be a JSON object containing:
+1. "examTitle": A short, descriptive title for the exam based on the content (max 10 words).
+2. "parts": An array containing EXACTLY ${partCount} part objects.
 
-The ${partCount} parts should follow the format of:
+The "parts" array should follow the format of:
 - Part 1 (Interview): Provide 'title', 'instructions', 'content' (interlocutor script). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:
   - 'question': "Interview Questions".
   - 'options': [].
   - 'tips': A general strategy on how to address and approach Part 1 (e.g. "Give full answers, but don't dominate...").
   - 'part1Questions': An array of 8 objects. CRITICAL: Questions 1-5 MUST be strictly personal questions (e.g. "Where are you from?", "What do you do here?", "How long have you been studying English?", "What do you enjoy doing in your free time?") exactly as in the standard Cambridge exam format. Questions 6-8 should be related to the specific topic "${topic}". Each object must contain:
+  - 'part1Questions': An array of 8 objects. CRITICAL: Questions 1-5 MUST be strictly personal questions (e.g. "Where are you from?", "What do you do here?", "How long have you been studying English?", "What do you enjoy doing in your free time?") exactly as in the standard Cambridge exam format. Questions 6-8 should be related to the specific ${topicPrompt}. Each object must contain:
     - 'question': The interview question text.
     - 'answer': A comprehensive, high-scoring sample answer (2-3 sentences) demonstrating advanced vocabulary.
     - 'tip': A specific tip for this question.
 - Part 2 (Long turn): Provide 'title', 'instructions', 'content' (task description). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:
   - 'question': The task prompt (e.g., "Compare these two pictures...").
   - 'options': [].
-  - 'imagePrompts': An array of strings (e.g. ["busy city street", "quiet park"]). Provide exactly 2 distinct, concise search queries for stock photos.
+  - 'imagePrompts': An array of 4 distinct strings. The first 2 are for Candidate A (Set 1), the next 2 are for Candidate B (Set 2). Provide concise search queries for stock photos.
   - 'possibleAnswers': An array of 3-4 comprehensive, high-scoring example sentences or short paragraphs a candidate could use to answer, demonstrating advanced vocabulary and grammar structures suitable for ${cefrLevel}.
   - 'tips': A detailed string containing advice on how to approach this specific task, including what to focus on (comparing, speculating, contrasting) and what to avoid.
 - Part 3 (Collaborative task): Provide 'title', 'instructions', 'content' (context). The 'questions' array MUST contain EXACTLY ONE object. This object MUST have:
-  - 'question': The discussion prompt (e.g., "Here are some things... Talk to each other about...").
+  - 'question': The discussion prompt. CRITICAL: This field MUST follow this exact format: 1. An introductory phrase ending with a colon (e.g., "Here are some things...:"). 2. A double newline (blank line). 3. A bulleted list of 5 distinct concepts/items (e.g. "- Reading a book\n- Going for a walk..."). 4. A double newline (blank line). 5. The discussion instruction (e.g. "Talk to each other about...").
   - 'options': [].
   - 'possibleAnswers': An array of 3-4 comprehensive, high-scoring example phrases or sentences candidates could use to initiate, maintain, or conclude the discussion, demonstrating advanced vocabulary and grammar suitable for ${cefrLevel}.
   - 'tips': A detailed string containing advice on how to approach this specific collaborative task, including turn-taking, agreeing/disagreeing politely, and reaching a decision.
@@ -124,10 +158,13 @@ Before finishing, double-check that you have generated exactly ${partCount} part
           partCount = 4; // Reduced from 8 to generate fewer questions.
           const readingQuestionCount = 6; // Aim for 5-6 questions per part.
           const readingTotal = partCount * readingQuestionCount; // Approx 24, within the 20-25 range.
-          enhancedTopic = `Based on the topic "${topic}", generate a Cambridge ${cefrLevel} Reading & Use of English practice exam.
-CRITICAL REQUIREMENT: The output MUST be a single JSON array containing EXACTLY ${partCount} distinct part objects. The total number of questions across all parts should be approximately ${readingTotal}. Do not stop generating early.
+          enhancedTopic = `Based on the ${topicPrompt}, generate a Cambridge ${cefrLevel} Reading & Use of English practice exam.
+CRITICAL REQUIREMENT: The output MUST be a JSON object containing:
+1. "examTitle": A short, descriptive title for the exam based on the content (max 10 words).
+2. "parts": An array containing EXACTLY ${partCount} distinct part objects.
+The total number of questions across all parts should be approximately ${readingTotal}. Do not stop generating early.
 
-The ${partCount} parts must be varied and follow the Cambridge exam format (e.g., Multiple-choice cloze, Open cloze, Word formation, Multiple choice).
+The "parts" array must be varied and follow the Cambridge exam format (e.g., Multiple-choice cloze, Open cloze, Word formation, Multiple choice).
 For each of the ${partCount} parts, provide: 'title', 'instructions', 'content' (the reading text), and a 'questions' array with an appropriate number of questions for that part type (around ${readingQuestionCount} each).
 CRITICAL: Ensure that the 'content' (reading text) for each part is a DIFFERENT paragraph or text. Do not reuse the same text for multiple parts.
 ${baseJsonInstructions} ${mcInstructions}
@@ -136,9 +173,19 @@ Before finishing, double-check that you have generated exactly ${partCount} part
       }
 
       console.log("Generating exam with enhanced topic:", enhancedTopic);
-      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 300, partCount);
+      const result = await generateExamAction(examType, enhancedTopic, cefrLevel, 300, partCount, fileData);
       if (result.success && result.content) {
         let finalExamContent = result.content;
+
+        // Attempt to extract title if topic is empty
+        try {
+          const parsed = JSON.parse(result.content);
+          if (!topic && parsed.examTitle) {
+            setTopic(parsed.examTitle);
+          }
+        } catch (e) {
+          console.error("Failed to parse initial content for title extraction", e);
+        }
 
         // If it's a Listening exam, generate audio for the transcripts
         if (examType === 'Listening') {
@@ -187,7 +234,7 @@ Before finishing, double-check that you have generated exactly ${partCount} part
   };
 
   return (
-    <ExamContext.Provider value={{ examType, setExamType, cefrLevel, setCefrLevel, topic, setTopic, generatedExam, loading, error, generateExam }}>
+    <ExamContext.Provider value={{ examType, setExamType, cefrLevel, setCefrLevel, topic, setTopic, examFor, setExamFor, file, setFile, generatedExam, loading, error, generateExam }}>
       {children}
     </ExamContext.Provider>
   );

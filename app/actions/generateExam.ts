@@ -23,7 +23,8 @@ export async function generateExamAction(
   prompt: string,
   cefrLevel: string,
   max_tokens: number,
-  partCount: number
+  partCount: number,
+  fileData?: string
 ) {
   if (apiKeys.length === 0) {
     return { success: false, error: 'Server is not configured with any API keys.' };
@@ -31,11 +32,16 @@ export async function generateExamAction(
 
   let lastError: string | null = 'Generation did not start.';
   const totalAttempts = apiKeys.length * models.length;
+  let visionFailed = false;
 
   for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
     const apiKey = apiKeys[keyIndex];
     for (let modelIndex = 0; modelIndex < models.length; modelIndex++) {
-      const model = models[modelIndex];
+      let model = models[modelIndex];
+      // Use vision model if image data is provided and vision hasn't failed yet
+      if (fileData && fileData.startsWith('data:image') && !visionFailed) {
+         model = 'llama-3.2-11b-vision-preview';
+      }
       const attempt = keyIndex * models.length + modelIndex + 1;
 
       console.log(`--- Exam Generation Attempt ${attempt}/${totalAttempts} ---`);
@@ -44,11 +50,28 @@ export async function generateExamAction(
         
         const groq = new Groq({ apiKey });
 
+        const messages: any[] = [
+            { role: 'system', content: 'You are an expert in creating Cambridge English Qualification exams. Your output must be a valid JSON object.' },
+        ];
+
+        if (fileData && fileData.startsWith('data:image') && !visionFailed) {
+             messages.push({
+                role: 'user',
+                content: [
+                    { type: "text", text: prompt },
+                    { type: "image_url", image_url: { url: fileData } }
+                ]
+            });
+        } else {
+            let textPrompt = prompt;
+            if (fileData && fileData.startsWith('data:image') && visionFailed) {
+                textPrompt += "\n\n(Note: An image was provided but the vision model is unavailable. Please generate the exam based on the topic and context provided in the text prompt.)";
+            }
+            messages.push({ role: 'user', content: textPrompt });
+        }
+
         const chatCompletion = await groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: 'You are an expert in creating Cambridge English Qualification exams. Your output must be a valid JSON object, specifically a JSON array of exam parts.' },
-            { role: 'user', content: prompt },
-          ],
+          messages: messages as any,
           model: model,
           temperature: 0.7,
           max_tokens: 8192, // Increased max_tokens to reduce 'length' finish_reason
@@ -82,10 +105,18 @@ export async function generateExamAction(
           if (Array.isArray(rawData)) {
             partsArray = rawData;
           } else if (rawData && typeof rawData === 'object') {
-            // As a fallback, handle cases where the model wraps the array in an object, e.g., {"exam": [...]}
-            const keys = Object.keys(rawData);
-            if (keys.length === 1 && Array.isArray(rawData[keys[0]])) {
-              partsArray = rawData[keys[0]];
+            // Check for 'parts' array (new format)
+            if (Array.isArray(rawData.parts)) {
+                partsArray = rawData.parts;
+            } else {
+                // Fallback: handle cases where the model wraps the array in an object, e.g., {"exam": [...]}
+                const keys = Object.keys(rawData);
+                for (const key of keys) {
+                    if (Array.isArray(rawData[key])) {
+                        partsArray = rawData[key];
+                        break;
+                    }
+                }
             }
           }
 
@@ -115,6 +146,11 @@ export async function generateExamAction(
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         lastError = `API call failed: ${errorMessage}`;
         console.error(`Error on attempt ${attempt}:`, lastError);
+        
+        if (fileData && fileData.startsWith('data:image') && !visionFailed) {
+            console.warn("Vision model failed. Falling back to text-only models for subsequent attempts.");
+            visionFailed = true;
+        }
         // Continue to next attempt, which will use a different key/model
       }
     }
