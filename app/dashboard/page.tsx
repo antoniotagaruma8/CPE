@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { saveExam, getSavedExams, deleteSavedExam } from '../actions/examActions';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
+import { toggleExamFavorite } from '../actions/favoriteActions';
 
 interface Question {
   id: number;
@@ -622,17 +623,7 @@ export default function DashboardPage() {
     ));
 
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      
-      const { error } = await supabase
-        .from('exams')
-        .update({ is_favorite: !currentStatus })
-        .eq('id', id);
-
-      if (error) throw error;
+      await toggleExamFavorite(id, !currentStatus);
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
       // Revert on error
