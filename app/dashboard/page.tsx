@@ -613,6 +613,36 @@ export default function DashboardPage() {
     }
   };
 
+  const handleToggleFavorite = async (id: string, currentStatus: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Optimistic update
+    setSavedExamsList(prev => prev.map(exam => 
+      exam.id === id ? { ...exam, is_favorite: !currentStatus } : exam
+    ));
+
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      const { error } = await supabase
+        .from('exams')
+        .update({ is_favorite: !currentStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+      // Revert on error
+      setSavedExamsList(prev => prev.map(exam => 
+        exam.id === id ? { ...exam, is_favorite: currentStatus } : exam
+      ));
+      alert('Failed to update favorite status');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     generateExam();
@@ -788,7 +818,12 @@ export default function DashboardPage() {
               <p className="text-sm text-slate-500 italic">No saved exams found.</p>
             ) : (
               <div className="space-y-3">
-                {savedExamsList.map((exam) => {
+                {[...savedExamsList]
+                  .sort((a, b) => {
+                    if (!!a.is_favorite !== !!b.is_favorite) return a.is_favorite ? -1 : 1;
+                    return new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime();
+                  })
+                  .map((exam) => {
                   let examForLabel = null;
                   try {
                     const parsed = JSON.parse(exam.data);
@@ -803,13 +838,22 @@ export default function DashboardPage() {
                   >
                     <div className="flex justify-between items-start mb-1">
                       <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-wider">{exam.level}</span>
-                      <button 
-                        onClick={(e) => handleDeleteSavedExam(exam.id, e)}
-                        className="text-slate-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
-                        title="Delete"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                      <div className="flex items-center">
+                        <button 
+                          onClick={(e) => handleToggleFavorite(exam.id, !!exam.is_favorite, e)}
+                          className={`transition-colors p-1 mr-1 ${exam.is_favorite ? 'text-yellow-400 hover:text-yellow-500' : 'text-slate-300 hover:text-yellow-400 opacity-0 group-hover:opacity-100'}`}
+                          title={exam.is_favorite ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <svg className="w-4 h-4" fill={exam.is_favorite ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                        </button>
+                        <button 
+                          onClick={(e) => handleDeleteSavedExam(exam.id, e)}
+                          className="text-slate-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                          title="Delete"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
                     </div>
                     <h4 className="font-bold text-slate-800 text-sm line-clamp-2 mb-1 group-hover:text-blue-700 leading-tight">{exam.topic || 'Untitled Exam'}</h4>
                     {examForLabel && <p className="text-[10px] text-slate-500 mb-1">For: <span className="font-semibold text-slate-700">{examForLabel}</span></p>}
